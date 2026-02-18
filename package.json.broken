@@ -1,0 +1,21 @@
+{
+  "name": "ierg4210",
+  "version": "1.0.0",
+  "description": "",
+  "homepage": "https://github.com/LiClement0216/IERG4210-project-#readme",
+  "bugs": {
+    "url": "https://github.com/LiClement0216/IERG4210-project-/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LiClement0216/IERG4210-project-.git"
+  },
+  "license": "ISC",
+  "author": "liclement",
+  "type": "commonjs",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node app.js"
+  }
+}
