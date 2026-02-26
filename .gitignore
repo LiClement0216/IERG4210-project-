@@ -16,10 +16,6 @@ npm-debug.log*
 .sudo_as_admin_successful
 .ssh/
 
-# DB files (if not in git)
-*.db
-*.sqlite
-
 # Logs
 *.log
 
