@@ -11,6 +11,10 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(htmlDir, 'index.html'));
 });
 
+app.get('/index.html', (req, res) => {
+  res.sendFile(path.join(htmlDir, 'index.html'));
+});
+
 app.get('/cakes/:filename', (req, res) => {
   const filename = req.params.filename;             
   res.sendFile(path.join(htmlDir, 'cakes', filename));
