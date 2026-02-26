@@ -3,10 +3,10 @@ const express = require('express');
 
 const app = express();
 
-const staticDir = path.join(__dirname, '..', '..', 'frontend', 'statics');
-app.use(express.static(staticDir));
+const staticsDir = path.join(__dirname, '..', '..', 'frontend', 'statics');
+app.use(express.static(staticsDir));
 
-const htmlDir = path.join(staticDir, 'html');
+const htmlDir = path.join(staticsDir, 'html');
 app.get('/', (req, res) => {
   res.sendFile(path.join(htmlDir, 'index.html'));
 });
