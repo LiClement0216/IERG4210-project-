@@ -23,8 +23,8 @@ html{
     display: flex;
 }
 .sales1{
-    width: 400px;
-    height: 560px;
+    min-width: 400px;
+    min-height: 560px;
     margin-right: 30px;
 }
 .sales1 img{
