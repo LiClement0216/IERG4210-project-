@@ -1,5 +1,18 @@
-import { createServer } from 'node:http';
-createServer(function (req, res) { // add to the 'request' event.
-res.writeHead(200, {'Content-Type': 'text/html'});
-res.end('<h1>Hello World</h1>');
-}).listen(3000, "localhost");
+const path = require('path');
+const express = require('express');
+
+const app = express();
+
+const htmlDir = path.join(__dirname, '..', '..', 'frontend', 'statics', 'html');
+const staticDir = path.join(__dirname, '..', '..', 'frontend');
+
+app.use(express.static(staticDir));
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(htmlDir, 'index.html'));
+});
+
+const PORT = 80;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
