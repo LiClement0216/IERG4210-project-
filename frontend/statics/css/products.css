@@ -1,0 +1,121 @@
+main{
+    width:1200px;
+}
+header h1{
+    line-height: 50px;
+    width: 1000px;
+    padding: 0 calc(50% - 605px);
+    margin:00 10px; 
+    display:inline;
+}
+
+
+.rightcolumn{
+    display: flex;
+    margin-top: 20px;
+}
+
+.slidercolumn{
+    height: 100%;
+    margin-right: 70px;
+    position: relative;
+}
+.imageslider{
+    display: flex;
+    overflow: auto;
+    width: 500px;
+    height: 600px;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    box-shadow: 0 10px 25px -10px hsla(0,0%,0%,0.25);
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+.imageslider::-webkit-scrollbar {
+  display: none;
+}
+
+.imageslider img{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    scroll-snap-align: start;
+}
+
+.slidernavigation{
+    display: flex;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1;
+    top: 550px;
+    height: auto;
+}
+.slidernavigation a{
+    width: 10px;
+    height: 10px;
+    margin: 10px;
+    border-radius: 50%;
+    background-color: rgb(255, 255, 255);
+    opacity: 0.65;
+    transition: opacity ease 250ms;
+}
+.slidernavigation a:hover{
+    opacity: 1;
+}
+
+.productimagelist{
+    width: 100%;
+    margin-top: 25px;
+    display: flex;
+    justify-content: flex-start;
+    flex-wrap: wrap;     
+    gap: 10px; 
+    padding-left: 10px;
+}
+.productimageitem{
+    width: 112px;
+    aspect-ratio: 3/4;
+}
+.productimageitem a img{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+}
+
+
+
+
+
+
+.descriptioncolumn{
+    background-color: rgb(243, 243, 243);
+    height: 100%;
+    flex: 1;
+    padding: 10px 50px;
+    border-radius: 10px 10px 0px 0px;
+    box-sizing: border-box;
+}
+
+.descriptioncontainer{
+    margin-top: 40px;
+}
+.descriptioncontainer h2{
+    text-align: left;
+    padding: 0;
+}
+.descriptioncontainer p{
+    margin-top: 20px;
+}
+.productprice{
+    display: block;
+    padding: 15px 0px;
+    font-size: larger;
+}
+.addToCart{
+    width: 100px;
+    height: 40px;
+    font-size: 14px;
+}
