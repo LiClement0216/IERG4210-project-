@@ -25,3 +25,15 @@ npm-debug.log*
 
 # Broken/backup
 package.json.broken
+backend/node_modules/
+backend/.cache/
+backend/.npm/
+backend/.nvm/
+backend/.ssh/
+backend/.bash_history
+backend/.bash_logout
+backend/.bashrc
+backend/.lesshst
+backend/.profile
+backend/.sudo_as_admin_successful
+backend/package.json.broken	
