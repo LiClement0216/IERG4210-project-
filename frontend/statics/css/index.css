@@ -6,7 +6,6 @@
 
 button, .addToCart, img, a, i ,h1 ,h2 {
   cursor: pointer;
-  user-select: none;
 }
 
 body{
