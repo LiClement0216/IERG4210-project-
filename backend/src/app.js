@@ -11,22 +11,19 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(htmlDir, 'index.html'));
 });
 
-app.get('/cakes/cake:idx', (req, res) => {
-  const idx = req.params.idx;             
-  const file = `cake${idx}.html`;
-  res.sendFile(path.join(htmlDir, 'cakes', file));
+app.get('/cakes/:filename', (req, res) => {
+  const filename = req.params.filename;             
+  res.sendFile(path.join(htmlDir, 'cakes', filename));
 });
 
-app.get('/categories/category:idx', (req, res) => {
-  const idx = req.params.idx;             
-  const file = `category${idx}.html`;
-  res.sendFile(path.join(htmlDir, 'categories', file));
+app.get('/categories/:filename', (req, res) => {
+  const filename = req.params.filename;             
+  res.sendFile(path.join(htmlDir, 'categories', filename));
 });
 
-app.get('/macarons/macaron:idx', (req, res) => {
-  const idx = req.params.idx;             
-  const file = `macaron${idx}.html`;
-  res.sendFile(path.join(htmlDir, 'macarons', file));
+app.get('/macarons/:filename', (req, res) => {
+  const filename = req.params.filename;             
+  res.sendFile(path.join(htmlDir, 'macarons', filename));
 });
 
 
