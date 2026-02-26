@@ -1,0 +1,27 @@
+# Node
+node_modules/
+npm-debug.log*
+
+# Caches
+.cache/
+.npm/
+.nvm/
+
+# Shell / user files
+.bash_history
+.bash_logout
+.bashrc
+.lesshst
+.profile
+.sudo_as_admin_successful
+.ssh/
+
+# DB files (if not in git)
+*.db
+*.sqlite
+
+# Logs
+*.log
+
+# Broken/backup
+package.json.broken
