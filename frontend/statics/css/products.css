@@ -1,5 +1,5 @@
 main{
-    width:1200px;
+    max-width:1300px;
 }
 header h1{
     line-height: 50px;
@@ -16,7 +16,6 @@ header h1{
 }
 
 .slidercolumn{
-    height: 100%;
     margin-right: 70px;
     position: relative;
 }
@@ -24,7 +23,7 @@ header h1{
     display: flex;
     overflow: auto;
     width: 500px;
-    height: 600px;
+    height: 550px;
     scroll-snap-type: x mandatory;
     scroll-behavior: smooth;
     box-shadow: 0 10px 25px -10px hsla(0,0%,0%,0.25);
@@ -49,7 +48,7 @@ header h1{
     left: 50%;
     transform: translateX(-50%);
     z-index: 1;
-    top: 550px;
+    top: 500px;
     height: auto;
 }
 .slidernavigation a{
@@ -73,6 +72,7 @@ header h1{
     flex-wrap: wrap;     
     gap: 10px; 
     padding-left: 10px;
+    margin-bottom: 10px;
 }
 .productimageitem{
     width: 112px;
@@ -91,12 +91,12 @@ header h1{
 
 
 .descriptioncolumn{
-    background-color: rgb(243, 243, 243);
-    height: 100%;
+    background-color: rgb(252, 242, 242);
     flex: 1;
     padding: 10px 50px;
     border-radius: 10px 10px 0px 0px;
     box-sizing: border-box;
+    margin-right: 40px;
 }
 
 .descriptioncontainer{
