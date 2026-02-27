@@ -40,19 +40,19 @@ table tr{
 }
 
 
-#product-table-body .name{
+.name{
     width: 150px;
 }
-#product-table-body .category{
+.category{
     width: 90px;
 }
-#product-table-body .price{
+.price{
     width: 45px;
 }
-#product-table-body .files{
+.files{
     width: 170px;
 }
-#product-table-body .description{
+.description{
     width: 600px;
 }
 .save-btn ,.create-btn{

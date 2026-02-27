@@ -45,7 +45,7 @@ app.get('/macarons/:filename', (req, res) => {
 
 
 app.get('/categoriesCRUD', (req, res) => {
-  res.redirect('/html/admin/categoriesCRUD.html');
+  res.sendFile(path.join(htmlDir, 'admin', 'categoriesCRUD.html'));
 });
 app.get('/productsCRUD', (req, res) => {
   res.sendFile(path.join(htmlDir, 'admin', 'productsCRUD.html'));
@@ -97,10 +97,24 @@ app.get('/productsR', (req, res) => {
 
 
 
-app.get('/categoriesU', (req, res) => {
+app.put('/categories/:catid', (req, res) => {
+  const catid = req.params.catid;
+  const { name } = req.body;
+
   try {
-    const rows = db.prepare('SELECT * FROM categories').all();
-    res.json(rows);
+    const stmt = db.prepare(`
+      UPDATE categories
+      SET name = @name
+      WHERE catid = @catid
+    `);
+
+    const info = stmt.run({ catid, name });
+
+    if (info.changes === 0) {
+      return res.status(404).send('Category not found');
+    }
+
+    res.sendStatus(204);
   } catch (err) {
     console.error(err);
     res.status(500).send('DB error');
@@ -212,14 +226,14 @@ app.delete('/products/:pid', async(req, res) => {
 
 
 app.post('/categories', (req, res) => {
-  const { catid, name, description, price } = req.body; 
+  const { name } = req.body; 
   try {
     const stmt = db.prepare(`
-      INSERT INTO categories (catid, name)
-      VALUES (@catid, @name)
+      INSERT INTO categories (name)
+      VALUES (@name)
     `);
 
-    const info = stmt.run({ catid, name});
+    const info = stmt.run({name});
 
     if (info.changes === 0) {
       return res.status(400).send('Failed to create category');
@@ -292,7 +306,7 @@ app.post('/products', uploadTemp.single('image'), async (req, res) => {
 
 
 
-const PORT = 80;
+const PORT = 3000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
 });
