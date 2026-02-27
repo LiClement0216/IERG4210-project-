@@ -1,0 +1,75 @@
+
+.content{
+    border-radius: 30px;
+    padding: 30px 0px;
+    justify-items: center;
+    height: auto;
+    display: block;  
+    width: auto;
+    padding-top: 0;
+}
+
+main{
+    width: auto;
+    max-width: none;
+}
+
+table{
+    max-width: 90%;
+    height: auto;
+    max-height: none;
+    color: rgb(116, 71, 71);
+    border-collapse: separate;
+    border-spacing: 0 8px; 
+}
+table th,td{
+    background-color: rgb(253, 245, 245);
+    
+    padding: 10px;
+    border-radius: 6px;
+}
+table tr{
+    max-height: 20px;
+    
+}
+
+
+#product-table-body .name{
+    width: 150px;
+}
+#product-table-body .category{
+    width: 90px;
+}
+#product-table-body .price{
+    width: 40px;
+}
+#product-table-body .files{
+    width: 170px;
+}
+#product-table-body .description{
+    width: 600px;
+}
+.save-btn{
+    border: none;
+    background-color: rgb(255, 255, 255);
+    color: rgb(114, 78, 78);
+    padding: 5px 10px;
+    border-radius: 6px;
+    width: 80px;
+}
+.save-btn:hover{
+    background-color: rgb(212, 203, 203);
+    color: rgb(158, 110, 110);
+}
+.delete-btn{
+    border: none;
+    background-color: rgb(250, 126, 126);
+    color: rgb(255, 255, 255);
+    padding: 5px 10px;
+    border-radius: 6px;
+    width: 80px;
+}
+.delete-btn:hover{
+    background-color: rgb(179, 104, 104);
+    color: rgb(255, 255, 255);
+}
