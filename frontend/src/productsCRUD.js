@@ -1,30 +1,3 @@
-/*document.addEventListener('DOMContentLoaded', () => {
-  fetch('/productsR')
-    .then(res => res.json())
-    .then(rows => {
-      const tbody = document.getElementById('product-table-body');
-      tbody.innerHTML = rows.map(p => `
-        <tr>
-          <td>${p.pid}</td>
-          <td>${p.categoryName}</td>
-          <td>${p.name}</td>
-          <td>${p.description}</td>
-          <td>${p.price}</td>
-          <td>
-            <button>Edit</button>
-            <button>Delete</button>
-          </td>
-        </tr>
-      `).join('');
-    })
-    .catch(console.error);
-});
-
- */
-
-
-
-
 document.addEventListener('DOMContentLoaded', () => {
   loadData();
 });
@@ -38,17 +11,18 @@ async function loadData() {
 
     const products = await productsRes.json();
     const categories = await categoriesRes.json();
-
-    renderProducts(products, categories);
+    const nextPid =
+    products.length === 0 ? 1 : Math.max(...products.map(p => p.pid)) + 1;
+    renderProducts(products, categories, nextPid);
   } catch (err) {
     console.error(err);
   }
 }
 
-function renderProducts(rows, categories) {
+function renderProducts(rows, categories, nextPid) {
   const tbody = document.getElementById('product-table-body');
 
-  tbody.innerHTML = rows.map(p => {
+  const existingRowsHtml = rows.map(p => {
     const categoryOptions = categories.map(c => `
       <option value="${c.catid}" ${c.catid === p.catid ? 'selected' : ''}>
         ${c.name}
@@ -62,9 +36,7 @@ function renderProducts(rows, categories) {
         </td>
 
         <td>
-          <select name="catid" class="category">
-            ${categoryOptions}
-          </select>
+          <select name="catid" class="category">${categoryOptions}</select>
         </td>
 
         <td>
@@ -85,35 +57,151 @@ function renderProducts(rows, categories) {
 
         <td>
           <button class="save-btn" onclick="saveProductHandler(${p.pid})">Save</button>
-          <button class="delete-btn">Delete</button>
+          <button class="delete-btn" onclick="deleteProductHandler(${p.pid})">Delete</button>
         </td>
       </tr>
     `;
   }).join('');
+
+  const categoryOptionsForNew = categories.map(c => `
+    <option value="${c.catid}">${c.name}</option>
+  `).join('');
+
+  const newRowHtml = `
+    <tr data-pid="new">
+      <td>${nextPid}</td>
+
+      <td>
+        <select class="category">
+          <option value="">-- select --</option>
+          ${categoryOptionsForNew}
+        </select>
+      </td>
+
+      <td>
+        <input type="text" class="name" value="" placeholder="Product name">
+      </td>
+
+      <td>
+        <textarea class="description" rows="2" placeholder="Product description"></textarea>
+      </td>
+
+      <td>
+        <input type="number" class="price" step="0.01" min="0" value="" placeholder="Price">
+      </td>
+
+      <td>
+        <input type="file" class="files" accept="image/*">
+      </td>
+
+      <td>
+        <button onclick="createProductHandler('new')" class="create-btn">Create</button>
+      </td>
+    </tr>
+  `;
+
+  tbody.innerHTML = existingRowsHtml + newRowHtml;
 }
 
+
+
+
+
+
+
+
 async function saveProductHandler(pid) {
+  const confirmSave = confirm('Are you sure you want to save changes?');
+  if (!confirmSave) {
+    return;
+  }
   const tr = document.querySelector(`tr[data-pid="${pid}"]`);
+
   const catid = tr.querySelector('.category').value;
   const name = tr.querySelector('.name').value;
   const description = tr.querySelector('.description').value;
-  const price = parseFloat(tr.querySelector('.price').value);
+  const price = tr.querySelector('.price').value;
   const imageInput = tr.querySelector('.files');
   const imageFile = imageInput.files[0];
+
+  const formData = new FormData();
+  formData.append('catid', catid);
+  formData.append('name', name);
+  formData.append('description', description);
+  formData.append('price', price);
+  if (imageFile) {
+    formData.append('image', imageFile);
+  }
+
   try {
     const res = await fetch(`/products/${pid}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ catid, name, description, price })
+      body: formData
     });
-
+    loadData();
     if (!res.ok) {
       alert('Update failed');
       return;
     }
-    loadData();
   } catch (err) {
     console.error(err);
     alert('Network error');
   }
+}
+
+function deleteProductHandler(pid){
+  const confirmDelete = confirm('Are you sure you want to delete this product?');
+  if (!confirmDelete) {
+    return;
+  }
+  fetch(`/products/${pid}`, {
+    method: 'DELETE'
+  }).then(res => {
+    if (!res.ok) {
+      alert('Delete failed');
+      return;
+    }
+    loadData();
+  }).catch(err => {
+    console.error(err);
+    alert('Network error');
+  });
+}
+
+function createProductHandler(pid){
+  const confirmCreate = confirm('Are you sure you want to create this product?');
+  if (!confirmCreate) {
+    return;
+  }
+  const tr = document.querySelector(`tr[data-pid="${pid}"]`);
+  
+  const catid = tr.querySelector('.category').value;
+  const name = tr.querySelector('.name').value;
+  const description = tr.querySelector('.description').value;
+  const price = tr.querySelector('.price').value;
+  const imageInput = tr.querySelector('.files');
+  const imageFile = imageInput.files[0];
+  
+  const formData = new FormData();
+  formData.append('catid', catid);
+  formData.append('name', name);
+  formData.append('description', description);
+  formData.append('price', price);
+  if (imageFile) {
+    formData.append('image', imageFile);
+  }
+
+  fetch('/products', {
+    method: 'POST',
+    body: formData
+  }).then(res => {
+    loadData();
+    if (!res.ok) {
+      alert('Create failed');
+      return;
+    }
+  }).catch(err => {
+    console.error(err);
+    alert('Network error');
+  });
 }

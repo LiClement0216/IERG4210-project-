@@ -1,7 +1,9 @@
 const path = require('path');
 const express = require('express');
 const db = require('./db');
-
+const fs = require('fs');
+const fsp = fs.promises;
+const multer = require('multer');
 const app = express();
 app.use(express.json());
 const staticsDir = path.join(__dirname, '..', '..', 'frontend', 'statics');
@@ -89,6 +91,12 @@ app.get('/productsR', (req, res) => {
 
 
 
+
+
+
+
+
+
 app.get('/categoriesU', (req, res) => {
   try {
     const rows = db.prepare('SELECT * FROM categories').all();
@@ -98,7 +106,40 @@ app.get('/categoriesU', (req, res) => {
     res.status(500).send('DB error');
   }
 });
-app.put('/products/:pid', (req, res) => {
+
+
+const imgBaseDir = path.join(staticsDir, 'img');
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const pid = req.params.pid;
+    const dir = path.join(imgBaseDir, 'products', pid);
+
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    const pid = req.params.pid;
+    const dir = path.join(imgBaseDir, 'products', pid);
+
+    const files = fs.readdirSync(dir).filter(name =>
+      /\.(png|jpe?g|gif|webp)$/i.test(name)
+    );
+    const nextIndex = files.length + 1;
+    cb(null, `${nextIndex}.jpg`);
+  }
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 }
+});
+
+
+app.put('/products/:pid', upload.single('image'),(req, res) => {
   const pid = req.params.pid;
   const { catid, name, description, price } = req.body;
 
@@ -130,13 +171,128 @@ app.put('/products/:pid', (req, res) => {
 
 
 
+app.delete('/categories/:catid', (req, res) => {
+  const catid = req.params.catid;
+  try {
+    const stmt = db.prepare('DELETE FROM categories WHERE catid = ?');
+    const info = stmt.run(catid);
+    if (info.changes === 0) {
+      return res.status(404).send('Category not found');
+    }
+    res.sendStatus(204);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('DB error');
+  }
+});
+app.delete('/products/:pid', async(req, res) => {
+  const pid = req.params.pid;
+  try {
+    const stmt = db.prepare('DELETE FROM products WHERE pid = ?');
+    const info = stmt.run(pid);
+    if (info.changes === 0) {
+      return res.status(404).send('Product not found');
+    }
+    const dir = path.join(imgBaseDir, 'products', String(pid));
+    //console.log('Deleting folder:', dir);
+    try {
+      await fsp.rm(dir, { recursive: true, force: true });
+    } catch (err) {
+      console.error('Failed to delete image folder:', err);
+    }
+    res.sendStatus(204);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('DB error');
+  }
+});
 
 
 
 
 
+app.post('/categories', (req, res) => {
+  const { catid, name, description, price } = req.body; 
+  try {
+    const stmt = db.prepare(`
+      INSERT INTO categories (catid, name)
+      VALUES (@catid, @name)
+    `);
 
-const PORT = 80;
+    const info = stmt.run({ catid, name});
+
+    if (info.changes === 0) {
+      return res.status(400).send('Failed to create category');
+    }
+
+    res.status(201).send('Category created');
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('DB error');
+  }
+});
+
+
+const tempStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = path.join(imgBaseDir, 'temp');
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + '.jpg'); // temp name
+  }
+});
+
+const uploadTemp = multer({
+  storage: tempStorage,
+  limits: { fileSize: 10 * 1024 * 1024 }
+});
+
+app.post('/products', uploadTemp.single('image'), async (req, res) => {
+  const { catid, name, description, price } = req.body;
+
+  try {
+    const stmt = db.prepare(`
+      INSERT INTO products (catid, name, description, price)
+      VALUES (@catid, @name, @description, @price)
+    `);
+    const info = stmt.run({ catid, name, description, price });
+
+    if (info.changes === 0) {
+      return res.status(400).send('Failed to create product');
+    }
+
+    const newPid = info.lastInsertRowid;
+
+    if (req.file) {
+      const pidDir = path.join(imgBaseDir, 'products', String(newPid));
+      if (!fs.existsSync(pidDir)) {
+        fs.mkdirSync(pidDir, { recursive: true });
+      }
+
+      const existing = fs.readdirSync(pidDir).filter(name =>
+        /\.(png|jpe?g|gif|webp)$/i.test(name)
+      );
+      const nextIndex = existing.length + 1;
+      const destPath = path.join(pidDir, `${nextIndex}.jpg`);
+
+      await fsp.rename(req.file.path, destPath);
+    }
+
+    res.status(201).send('Product created');
+  } catch (err) {
+    console.error('POST /products error:', err);
+    res.status(500).send('DB error');
+  }
+});
+
+
+
+
+const PORT = 3000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
 });
