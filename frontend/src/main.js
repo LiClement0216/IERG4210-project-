@@ -60,7 +60,7 @@ function renderContent(products, categories, catid) {
   productList.innerHTML = filtered.map(p => `
     <div class="productitem">
         <a href="/products.html?catid=${p.catid}&pid=${p.pid}">
-            <img src="/img/products/${p.pid}/1.jpg" alt="${p.name}">
+            <img src="/img/products/${p.pid}/thumb.jpg" alt="${p.name}">
         </a>
         <div>
         <div class="productname">

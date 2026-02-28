@@ -5,6 +5,7 @@ const fs = require('fs');
 const fsp = fs.promises;
 const multer = require('multer');
 const app = express();
+const sharp = require('sharp');
 app.use(express.json());
 const staticsDir = path.join(__dirname, '..', '..', 'frontend', 'statics');
 const frontRoot  = path.join(__dirname, '..', '..', 'frontend');
@@ -296,13 +297,20 @@ app.post('/products', uploadTemp.single('image'), async (req, res) => {
         fs.mkdirSync(pidDir, { recursive: true });
       }
 
-      const existing = fs.readdirSync(pidDir).filter(name =>
-        /\.(png|jpe?g|gif|webp)$/i.test(name)
-      );
-      const nextIndex = existing.length + 1;
-      const destPath = path.join(pidDir, `${nextIndex}.jpg`);
+      const originalPath = req.file.path;
+      const img1Path     = path.join(pidDir, '1.jpg');
+      const thumbPath    = path.join(pidDir, 'thumb.jpg');
 
-      await fsp.rename(req.file.path, destPath);
+      await sharp(originalPath)
+        .jpeg({ quality: 85 })
+        .toFile(img1Path);
+
+      await sharp(originalPath)
+        .resize(150, 200, { fit: 'cover', withoutEnlargement: true })
+        .jpeg({ quality: 80 })
+        .toFile(thumbPath);
+
+      await fsp.unlink(originalPath);
     }
 
     res.status(201).send('Product created');
@@ -326,7 +334,7 @@ app.get('/products/:pid/images', (req, res) => {
 
     let files = fs.readdirSync(dir);
     files = files.filter(name =>
-      /\.(png|jpe?g|gif|webp)$/i.test(name)
+      /\.(png|jpe?g|gif|webp)$/i.test(name)&&name !== 'thumb.jpg'
     );
 
     files.sort((a, b) => {
