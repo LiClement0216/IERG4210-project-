@@ -31,6 +31,9 @@ function renderCategories(rows, nextCatid) {
         <td>
           <input type="text" name="name" value="${c.name}" class="name">
         </td>
+        <td>
+          <input type="text" name="description" value="${c.description}" class="description">
+        </td>
         <td> 
           <button class="save-btn" onclick="saveCategoriesHandler(${c.catid})">Save</button>
           <button class="delete-btn" onclick="deleteCategoriesHandler(${c.catid})">Delete</button>
@@ -48,6 +51,10 @@ function renderCategories(rows, nextCatid) {
       
       <td>
         <input type="text" class="name" value="" placeholder="Category name">
+      </td>
+
+      <td>
+        <input type="text" class="description" value="" placeholder="Category description">
       </td>
 
       <td>
@@ -73,6 +80,7 @@ async function saveCategoriesHandler(catid) {
   }
   const tr = document.querySelector(`tr[data-catid="${catid}"]`);
   const name = tr.querySelector('.name').value;
+  const description = tr.querySelector('.description').value;
 
   try {
     const res = await fetch(`/categories/${catid}`, {
@@ -80,7 +88,7 @@ async function saveCategoriesHandler(catid) {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ name })
+      body: JSON.stringify({ name, description })
     });
     loadData();
     if (!res.ok) {
@@ -120,13 +128,14 @@ function createCategoriesHandler(catid){
   const tr = document.querySelector(`tr[data-catid="${catid}"]`);
   
   const name = tr.querySelector('.name').value;
+  const description = tr.querySelector('.description').value;
 
   fetch('/categories', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({ name })
+    body: JSON.stringify({ name, description })
   }).then(res => {
     loadData();
     if (!res.ok) {

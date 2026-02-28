@@ -25,6 +25,14 @@ app.get('/index.html', (req, res) => {
   res.sendFile(path.join(htmlDir, 'index.html'));
 });
 
+app.get('/main.html', (req, res) => {
+  res.sendFile(path.join(htmlDir, 'main.html'));
+});
+
+app.get('/products.html', (req, res) => {           
+  res.sendFile(path.join(htmlDir, 'products.html'));
+});
+
 app.get('/cakes/:filename', (req, res) => {
   const filename = req.params.filename;             
   res.sendFile(path.join(htmlDir, 'cakes', filename));
@@ -99,16 +107,17 @@ app.get('/productsR', (req, res) => {
 
 app.put('/categories/:catid', (req, res) => {
   const catid = req.params.catid;
-  const { name } = req.body;
+  const { name, description } = req.body;
 
   try {
     const stmt = db.prepare(`
       UPDATE categories
-      SET name = @name
+      SET name = @name,
+          description = @description
       WHERE catid = @catid
     `);
 
-    const info = stmt.run({ catid, name });
+    const info = stmt.run({ catid, name, description });
 
     if (info.changes === 0) {
       return res.status(404).send('Category not found');
@@ -226,14 +235,14 @@ app.delete('/products/:pid', async(req, res) => {
 
 
 app.post('/categories', (req, res) => {
-  const { name } = req.body; 
+  const { name, description } = req.body; 
   try {
     const stmt = db.prepare(`
-      INSERT INTO categories (name)
-      VALUES (@name)
+      INSERT INTO categories (name, description)
+      VALUES (@name, @description)
     `);
 
-    const info = stmt.run({name});
+    const info = stmt.run({name, description});
 
     if (info.changes === 0) {
       return res.status(400).send('Failed to create category');
@@ -302,6 +311,53 @@ app.post('/products', uploadTemp.single('image'), async (req, res) => {
     res.status(500).send('DB error');
   }
 });
+
+
+
+
+app.get('/products/:pid/images', (req, res) => {
+  const pid = String(req.params.pid);
+  const dir = path.join(imgBaseDir, 'products', pid);
+
+  try {
+    if (!fs.existsSync(dir)) {
+      return res.json([]);
+    }
+
+    let files = fs.readdirSync(dir);
+    files = files.filter(name =>
+      /\.(png|jpe?g|gif|webp)$/i.test(name)
+    );
+
+    files.sort((a, b) => {
+      const na = parseInt(a, 10);
+      const nb = parseInt(b, 10);
+      if (!isNaN(na) && !isNaN(nb)) return na - nb;
+      return a.localeCompare(b);
+    });
+
+    res.json(files);
+  } catch (err) {
+    console.error('GET /products/:pid/images error:', err);
+    res.status(500).send('Image listing error');
+  }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
