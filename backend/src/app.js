@@ -218,7 +218,6 @@ app.delete('/products/:pid', async(req, res) => {
       return res.status(404).send('Product not found');
     }
     const dir = path.join(imgBaseDir, 'products', String(pid));
-    //console.log('Deleting folder:', dir);
     try {
       await fsp.rm(dir, { recursive: true, force: true });
     } catch (err) {
@@ -266,7 +265,7 @@ const tempStorage = multer.diskStorage({
     cb(null, dir);
   },
   filename: (req, file, cb) => {
-    cb(null, Date.now() + '.jpg'); // temp name
+    cb(null, Date.now() + '.jpg');
   }
 });
 

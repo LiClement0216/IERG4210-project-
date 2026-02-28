@@ -1,3 +1,5 @@
+import { addToCartHandler, renderCart, removeFromCart, updateQuantity } from './shoppingCart.js';
+
 document.addEventListener('DOMContentLoaded', () => {
   const params = new URLSearchParams(window.location.search);
   const catid = params.get('catid');
@@ -19,6 +21,25 @@ async function loadData(catid, pid) {
 
     renderCategories(categories);
     renderContent(products, categories, catid, pid);
+
+    renderCart(products);
+
+    window.addToCartHandler = (pid) => {
+      addToCartHandler(pid);
+      renderCart(products);
+    };
+
+    window.updateQuantity = (pid, qty) => {
+      updateQuantity(pid, qty);
+      renderCart(products);
+    };
+
+    window.removeFromCart = (pid) => {
+      removeFromCart(pid);
+      renderCart(products);
+    };
+
+
   } catch (err) {
     console.error(err);
   }
@@ -44,7 +65,6 @@ async function renderContent(products, categories, catid, pid) {
 
   const descContainer = document.querySelector('.descriptioncontainer');
   const sliderColumn  = document.querySelector('.slidercolumn');
-  const breadcrumbLis = document.querySelector('nav ol').querySelectorAll('li');
 
   if (category) {
     document.querySelectorAll('li')[2].innerHTML = `<a href="/html/main.html?catid=${category.catid}" class="categorylink">${category.name}</a>`;
@@ -64,7 +84,7 @@ async function renderContent(products, categories, catid, pid) {
     <h2>${product.name}</h2>
     <p>${product.description || ''}</p>
     <p class="productprice">$${product.price}</p>
-    <button class="addToCart">Add to Cart</button>
+    <button class="addToCart" onclick="addToCartHandler(${product.pid})">Add to Cart</button>
   `;
 
   try {
@@ -105,3 +125,5 @@ async function renderContent(products, categories, catid, pid) {
     console.error('Failed to load product images', err);
   }
 }
+
+window.addToCartHandler = addToCartHandler;
