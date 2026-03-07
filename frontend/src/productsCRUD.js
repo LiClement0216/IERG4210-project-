@@ -160,6 +160,23 @@ async function saveProductHandler(pid) {
   const imageInput = tr.querySelector('.files');
   const imageFile = imageInput.files[0];
 
+
+  if (!isSafeText(name, 1, 50)) {
+    alert('Name must be 1-50 characters and cannot contain < or >');
+    return;
+  }
+  if(!catid) {
+    alert('Category must be selected');
+    return;
+  }
+  if (description && !isSafeText(description, 0, 600)) {
+    alert('Description must be 0-600 characters and cannot contain < or >');
+    return;
+  }
+  if (!isSafePrice(price)) {
+    alert('Price must be a valid number >= 0');
+    return;
+  }
   const formData = new FormData();
   formData.append('catid', catid);
   formData.append('name', name);
@@ -182,23 +199,6 @@ async function saveProductHandler(pid) {
   } catch (err) {
     console.error(err);
     alert('Network error');
-  }
-
-  if (!isSafeText(name, 1, 50)) {
-    alert('Name must be 1-50 characters and cannot contain < or >');
-    return;
-  }
-  if(!catid) {
-    alert('Category must be selected');
-    return;
-  }
-  if (description && !isSafeText(description, 0, 600)) {
-    alert('Description must be 0-600 characters and cannot contain < or >');
-    return;
-  }
-  if (!isSafePrice(price)) {
-    alert('Price must be a valid number >= 0');
-    return;
   }
 }
 
