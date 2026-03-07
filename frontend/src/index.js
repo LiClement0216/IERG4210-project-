@@ -44,9 +44,17 @@ function renderCategories(rows) {
 
   const existingRowsHtml = rows.map(c => {
     return`
-      <li><a href="/main.html?catid=${c.catid}"><div>${c.name}</div></a></li>
+      <li><a href="/main.html?catid=${c.catid}"><div class="category-name"></div></a></li>
     `
   }).join('');
 
   lbody.innerHTML = existingRowsHtml;
+
+  const categoryNameElements = lbody.querySelectorAll('.category-name');
+  categoryNameElements.map((el, index) => {
+    if (rows[index]) {
+      el.textContent = rows[index].name;
+      return el;
+    }
+  });
 }
