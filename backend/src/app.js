@@ -9,6 +9,8 @@ const sharp = require('sharp');
 app.use(express.json());
 const staticsDir = path.join(__dirname, '..', '..', 'frontend', 'statics');
 const frontRoot  = path.join(__dirname, '..', '..', 'frontend');
+const Joi = require('joi');
+const sanitizeHtml = require('sanitize-html');
 
 app.use('/html', express.static(path.join(staticsDir, 'html')));
 app.use('/css',  express.static(path.join(staticsDir, 'css')));
@@ -98,17 +100,58 @@ app.get('/productsR', (req, res) => {
 
 
 
+function escapeHtml(str) {
+  if (typeof str !== 'string') return str;
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+const categorySchema = Joi.object({
+  name: Joi.string()
+           .trim()
+           .min(1)
+           .max(50)
+           .custom((value, helpers) => escapeHtml(value), 'escape HTML')
+           .required(),
+  description: Joi.string()
+           .trim()
+           .allow('')
+           .max(200)
+           .custom((value, helpers) => escapeHtml(value), 'escape HTML')
+});
 
 
-
-
+const productSchema = Joi.object({
+  catid: Joi.number().integer().min(1).required(),
+  name: Joi.string().trim().min(1).max(50)
+           .custom((v) => escapeHtml(v), 'escape HTML')
+           .required(),
+  description: Joi.string().trim().allow('').max(600)
+           .custom((v) => escapeHtml(v), 'escape HTML'),
+  price: Joi.number().min(0).required()
+});
 
 
 
 
 app.put('/categories/:catid', (req, res) => {
-  const catid = req.params.catid;
-  const { name, description } = req.body;
+  const catid = Number(req.params.catid);
+  if (!Number.isInteger(catid) || catid <= 0) {
+    return res.status(400).send('Invalid category id');
+  }
+  const data = {
+    name: req.body.name,
+    description: req.body.description
+  };
+
+  const { error, value } = categorySchema.validate(data);
+  if (error) {
+    return res.status(400).send('Invalid category data');
+  }
+
+  const { name, description } = value;
 
   try {
     const stmt = db.prepare(`
@@ -164,8 +207,24 @@ const upload = multer({
 
 
 app.put('/products/:pid', upload.single('image'),(req, res) => {
-  const pid = req.params.pid;
-  const { catid, name, description, price } = req.body;
+  const pid = Number(req.params.pid);
+  if (!Number.isInteger(pid) || pid <= 0) {
+    return res.status(400).send('Invalid product id');
+  }
+
+  const data = {
+    catid: Number(req.body.catid),
+    name: req.body.name,
+    description: req.body.description,
+    price: Number(req.body.price)
+  };
+
+  const { error, value } = productSchema.validate(data);
+  if (error) {
+    return res.status(400).send('Invalid product data');
+  }
+
+  const { catid, name, description, price } = value;
 
   try {
     const stmt = db.prepare(`
@@ -235,7 +294,17 @@ app.delete('/products/:pid', async(req, res) => {
 
 
 app.post('/categories', (req, res) => {
-  const { name, description } = req.body; 
+  const data = {
+    name: req.body.name,
+    description: req.body.description
+  };
+  const { error, value } = categorySchema.validate(data);
+  if (error) {
+    return res.status(400).send('Invalid category data');
+  }
+
+  const { name, description } = value;
+
   try {
     const stmt = db.prepare(`
       INSERT INTO categories (name, description)
@@ -275,7 +344,18 @@ const uploadTemp = multer({
 });
 
 app.post('/products', uploadTemp.single('image'), async (req, res) => {
-  const { catid, name, description, price } = req.body;
+  const data = {
+    catid: Number(req.body.catid),
+    name: req.body.name,
+    description: req.body.description,
+    price: Number(req.body.price)
+  };
+
+  const { error, value } = productSchema.validate(data);
+  if (error) {
+    return res.status(400).send('Invalid product data');
+  }
+  const { catid, name, description, price } = value;
 
   try {
     const stmt = db.prepare(`
