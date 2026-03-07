@@ -29,10 +29,22 @@ function renderCategories(rows, nextCatid) {
           ${c.catid}
         </td>
         <td>
-          <input type="text" name="name" value="${c.name}" class="name">
+          <input type="text"
+            name="name" 
+            value="${c.name}"
+            required
+            minlength="1"
+            maxlength="50"
+            pattern="[A-Za-z0-9 ,.'-]{1,50}"
+            class="name">
         </td>
         <td>
-          <input type="text" name="description" value="${c.description}" class="description">
+          <input type="text"
+            name="description"
+            value="${c.description}"
+            maxlength="200"
+            pattern="[A-Za-z0-9 ,.'-]{0,200}"
+            class="description">
         </td>
         <td> 
           <button class="save-btn" onclick="saveCategoriesHandler(${c.catid})">Save</button>
@@ -50,11 +62,23 @@ function renderCategories(rows, nextCatid) {
       </td>
       
       <td>
-        <input type="text" class="name" value="" placeholder="Category name">
+        <input type="text"
+        class="name"
+        value=""
+        required
+        minlength="1"
+        maxlength="50"
+        pattern="[A-Za-z0-9 ,.'-]{1,50}"
+        placeholder="Category name">
       </td>
 
       <td>
-        <input type="text" class="description" value="" placeholder="Category description">
+        <input type="text"
+        class="description"
+        value=""
+        maxlength="200"
+        pattern="[A-Za-z0-9 ,.'-]{0,200}"
+        placeholder="Category description">
       </td>
 
       <td>
@@ -99,6 +123,15 @@ async function saveCategoriesHandler(catid) {
     console.error(err);
     alert('Network error');
   }
+
+  if (!isSafeText(name, 1, 50)) {
+    alert('Invalid category name');
+    return;
+  }
+  if (!isSafeText(description, 0, 200)) {
+    alert('Invalid category description');
+    return;
+  }
 }
 
 function deleteCategoriesHandler(catid){
@@ -129,6 +162,15 @@ function createCategoriesHandler(catid){
   
   const name = tr.querySelector('.name').value;
   const description = tr.querySelector('.description').value;
+  
+  if (!isSafeText(name, 1, 50)) {
+    alert('Invalid category name');
+    return;
+  }
+  if (!isSafeText(description, 0, 200)) {
+    alert('Invalid category description');
+    return;
+  }
 
   fetch('/categories', {
     method: 'POST',
@@ -146,4 +188,17 @@ function createCategoriesHandler(catid){
     console.error(err);
     alert('Network error');
   });
+}
+
+function isSafeText(value, minLen, maxLen) {
+  const v = value.trim();
+  if (v.length < minLen || v.length > maxLen) return false;
+  if (/[<>]/.test(v)) return false;
+  return true;
+}
+
+function isSafePrice(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return false;
+  return n >= 0 && n <= 9999;
 }

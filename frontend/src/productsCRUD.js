@@ -40,15 +40,33 @@ function renderProducts(rows, categories, nextPid) {
         </td>
 
         <td>
-          <input type="text" name="name" value="${p.name}" class="name">
+          <input type="text" 
+            name="name" value="${p.name}"
+            class="name"
+            required
+            minlength="1"
+            maxlength="50"
+            pattern="[A-Za-z0-9 ,.'-]{1,50}">
         </td>
 
         <td>
-          <textarea name="description" rows="2" class="description">${p.description}</textarea>
+          <textarea name="description" 
+            rows="2" 
+            class="description" 
+            maxlength="600"
+            pattern="[A-Za-z0-9 ,.'-]{0,600}">${p.description}</textarea>
         </td>
 
         <td>
-          <input type="number" name="price" step="0.01" min="0" value="${p.price}" class="price">
+          <input type="number"
+            name="price"
+            step="0.01"
+            min="0"
+            value="${p.price}"
+            class="price"
+            required
+            min="0"
+            step="0.01">
         </td>
 
         <td>
@@ -79,15 +97,33 @@ function renderProducts(rows, categories, nextPid) {
       </td>
 
       <td>
-        <input type="text" class="name" value="" placeholder="Product name">
+        <input type="text"
+        class="name"
+        value=""
+        required
+        minlength="1"
+        maxlength="50"
+        pattern="[A-Za-z0-9 ,.'-]{1,50}"
+        placeholder="Product name">
       </td>
 
       <td>
-        <textarea class="description" rows="2" placeholder="Product description"></textarea>
+        <textarea class="description"
+        rows="2"
+        value=""
+        maxlength="600"
+        pattern="[A-Za-z0-9 ,.'-]{0,600}"
+        placeholder="Product description"></textarea>
       </td>
 
       <td>
-        <input type="number" class="price" step="0.01" min="0" value="" placeholder="Price">
+        <input type="number"
+        class="price"
+        step="0.01"
+        min="0"
+        required
+        value=""
+        placeholder="Price">
       </td>
 
       <td>
@@ -147,6 +183,23 @@ async function saveProductHandler(pid) {
     console.error(err);
     alert('Network error');
   }
+
+  if (!isSafeText(name, 1, 50)) {
+    alert('Name must be 1-50 characters and cannot contain < or >');
+    return;
+  }
+  if(!catid) {
+    alert('Category must be selected');
+    return;
+  }
+  if (description && !isSafeText(description, 0, 600)) {
+    alert('Description must be 0-600 characters and cannot contain < or >');
+    return;
+  }
+  if (!isSafePrice(price)) {
+    alert('Price must be a valid number >= 0');
+    return;
+  }
 }
 
 function deleteProductHandler(pid){
@@ -182,6 +235,23 @@ function createProductHandler(pid){
   const imageInput = tr.querySelector('.files');
   const imageFile = imageInput.files[0];
   
+  if (!isSafeText(name, 1, 50)) {
+    alert('Name must be 1-50 characters and cannot contain < or >');
+    return;
+  }
+  if(!catid) {
+    alert('Category must be selected');
+    return;
+  }
+  if (description && !isSafeText(description, 0, 600)) {
+    alert('Description must be 0-600 characters and cannot contain < or >');
+    return;
+  }
+  if (!isSafePrice(price)) {
+    alert('Price must be a valid number >= 0');
+    return;
+  }
+
   const formData = new FormData();
   formData.append('catid', catid);
   formData.append('name', name);
@@ -204,4 +274,17 @@ function createProductHandler(pid){
     console.error(err);
     alert('Network error');
   });
+}
+
+function isSafeText(value, minLen, maxLen) {
+  const v = value.trim();
+  if (v.length < minLen || v.length > maxLen) return false;
+  if (/[<>]/.test(v)) return false;
+  return true;
+}
+
+function isSafePrice(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return false;
+  return n >= 0 && n <= 9999;
 }
