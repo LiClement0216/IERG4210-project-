@@ -19,6 +19,20 @@ app.use('/src',  express.static(path.join(frontRoot, 'src')));
 const htmlDir = path.join(staticsDir, 'html');
 
 
+app.use((req, res, next) => {
+  res.setHeader(
+    'Content-Security-Policy',
+    "default-src 'self'; " +
+    "script-src 'self'; " +
+    "style-src 'self' https://cdnjs.cloudflare.com 'unsafe-inline'; " +
+    "img-src 'self' data:; " +
+    "font-src 'self' https://cdnjs.cloudflare.com data:; " +
+    "object-src 'none'; " +
+    "base-uri 'self'; " +
+    "form-action 'self'"
+  );
+  next();
+});
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(htmlDir, 'index.html'));
