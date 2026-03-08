@@ -35,7 +35,7 @@ export function renderCart(products) {
 
   const subtotalElement = document.querySelector('.subtotal');
   if (subtotalElement) {
-    subtotalElement.innerHTML = `subtotal = $${subtotal}`;
+    subtotalElement.textContent = `subtotal = $${subtotal}`;
   }
 
   cartContainer.innerHTML = cart.map(item => {
@@ -52,13 +52,12 @@ export function renderCart(products) {
         <div>
           <div>
             <a class="cartitemname"
-               href="/html/products.html?catid=${product.catid}&pid=${product.pid}">
-              ${product.name}
+              href="/html/products.html?catid=${product.catid}&pid=${product.pid}">
             </a>
           </div>
-          <p class="cartitemdescription">${product.description || ''}</p>
+          <p class="cartitemdescription"></p>
           <div>
-            <p class="productprice">$${product.price}</p>
+            <p class="productprice">$</p>
           </div>
           <div class="quantitycontrol">
             <button class="quantityincrement"
@@ -71,6 +70,17 @@ export function renderCart(products) {
       </div>
     `;
   }).join('');
+  const cartitemnames = cartContainer.querySelectorAll('.cartitemname');
+  const cartitemdescriptions = cartContainer.querySelectorAll('.cartitemdescription');
+  const cartitemprices = cartContainer.querySelectorAll('.productprice');
+  cart.forEach((item, index) => {
+    const product = products.find(p => p.pid === item.pid);
+    if (product) {
+      if (cartitemnames[index]) cartitemnames[index].textContent = product.name || '';
+      if (cartitemdescriptions[index]) cartitemdescriptions[index].textContent = product.description || '';
+      if (cartitemprices[index]) cartitemprices[index].textContent = `$${product.price}` || '';
+    }
+  });
 }
 
 export function removeFromCart(pid) {

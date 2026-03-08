@@ -43,37 +43,57 @@ async function loadData(catid) {
 }
 
 function renderCategories(rows) {
+    console.log('categories rows:', rows);
   const lbody = document.querySelector('.categorieslist');
 
-  const html = rows.map(c => `
-    <li>
-      <a href="/html/main.html?catid=${c.catid}">
-        <div>${c.name}</div>
-      </a>
-    </li>
-  `).join('');
+  const existingRowsHtml = rows.map(c => {
+    return`
+      <li><a href="/main.html?catid=${c.catid}"><div class="category-name"></div></a></li>
+    `
+  }).join('');
 
-  lbody.innerHTML = html;
+  lbody.innerHTML = existingRowsHtml;
+
+  const categoryNameElements = lbody.querySelectorAll('.category-name');
+  Array.from(categoryNameElements).map((el, index) => {
+    if (rows[index]) {
+      el.textContent = rows[index].name;
+      return el;
+    }
+  });
 }
 
 function renderContent(products, categories, catid) {
   const category = categories.find(c => String(c.catid) === String(catid));
   const filtered = products.filter(p => String(p.catid) === String(catid));
-
-  const desc        = document.querySelector('.categorydescription');
+ 
+  const desc = document.querySelector('.categorydescription');
   const productList = document.querySelector('.productlist');
 
-  if (category) {
-    let html = `<h1>${category.name}</h1>`;
-    if (category.description) {
-      html += `<p>${category.description}</p>`;
-    }
-    desc.innerHTML = html;
+  if (category && desc) {
+    desc.innerHTML = 
+      `<h1 class="category-title"></h1>
+      <p class="category-des"></p>`;
 
-    const breadcrumbLis = document.querySelector('nav ol').querySelectorAll('li');
-    if (breadcrumbLis[2]) {
-      breadcrumbLis[2].innerHTML =
-        `<a href="/html/main.html?catid=${category.catid}" class="categorylink">${category.name}</a>`;
+    const categoryTitle = desc.querySelector('.category-title');
+    const categoryDesc = desc.querySelector('.category-des');
+    if (categoryTitle) {
+      categoryTitle.textContent = category.name;
+    }
+    if (categoryDesc) {
+      categoryDesc.textContent = category.description || '';
+    }
+
+
+    if(category){
+      const breadcrumbs = document.querySelector('nav ol').querySelectorAll('li');
+      if (breadcrumbs[2]) {
+        breadcrumbs[2].innerHTML = `<a href="/html/main.html?catid=${category.catid}" class="categorylink"><span class="category-name"></span></a>`;
+        const span = breadcrumbs[2].querySelector('.category-name');
+        if (span) {
+          span.textContent = category.name;
+        }
+      }
     }
   }
 
@@ -84,13 +104,27 @@ function renderContent(products, categories, catid) {
       </a>
       <div>
         <div class="productname">
-          <a href="/html/products.html?catid=${p.catid}&pid=${p.pid}">${p.name}</a>
+          <a href="/html/products.html?catid=${p.catid}&pid=${p.pid}"></a>
         </div>
-        <div>
-          <p class="productprice">$${p.price}</p>
+        <div class="productpricewrapper">
+          <p class="productprice">$</p>
           <button class="addToCart" onclick="addToCartHandler(${p.pid})">Add to Cart</button>
         </div>
       </div>
     </div>
   `).join('') || '<p>No products in this category yet.</p>';
+
+  const productNameElements = productList.querySelectorAll('.productname a');
+  const productPriceElements = productList.querySelectorAll('.productprice');
+  Array.from(productNameElements).map((el, index) => {
+    if (filtered[index]) {
+      el.textContent = filtered[index].name;
+      return el;
+    }});
+  Array.from(productPriceElements).map((el, index) => {
+    if (filtered[index]) {
+      el.textContent = `$${filtered[index].price.toFixed(2)}`;
+      return el;
+    }
+  });
 }

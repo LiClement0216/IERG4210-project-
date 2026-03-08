@@ -46,17 +46,24 @@ async function loadData(catid, pid) {
 }
 
 function renderCategories(rows) {
+    console.log('categories rows:', rows);
   const lbody = document.querySelector('.categorieslist');
 
-  const html = rows.map(c => `
-    <li>
-      <a href="/html/main.html?catid=${c.catid}">
-        <div>${c.name}</div>
-      </a>
-    </li>
-  `).join('');
+  const existingRowsHtml = rows.map(c => {
+    return`
+      <li><a href="/main.html?catid=${c.catid}"><div class="category-name"></div></a></li>
+    `
+  }).join('');
 
-  lbody.innerHTML = html;
+  lbody.innerHTML = existingRowsHtml;
+
+  const categoryNameElements = lbody.querySelectorAll('.category-name');
+  Array.from(categoryNameElements).map((el, index) => {
+    if (rows[index]) {
+      el.textContent = rows[index].name;
+      return el;
+    }
+  });
 }
 
 async function renderContent(products, categories, catid, pid) {
@@ -67,7 +74,15 @@ async function renderContent(products, categories, catid, pid) {
   const sliderColumn  = document.querySelector('.slidercolumn');
 
   if (category) {
-    document.querySelectorAll('li')[2].innerHTML = `<a href="/html/main.html?catid=${category.catid}" class="categorylink">${category.name}</a>`;
+    const breadcrumbLis = document.querySelector('nav ol').querySelectorAll('li');
+    if (breadcrumbLis[2]) {
+      breadcrumbLis[2].innerHTML =
+        `<a href="/html/main.html?catid=${category.catid}" class="categorylink">
+           <span class="crumb-cat-name"></span>
+         </a>`;
+      const span = breadcrumbLis[2].querySelector('.crumb-cat-name');
+      if (span) span.textContent = category.name;
+    }
   }
 
   if (!product || !category || category.catid !== product.catid) {
@@ -76,16 +91,32 @@ async function renderContent(products, categories, catid, pid) {
     return;
   }
 
-  document.querySelectorAll('li')[4].innerHTML = `<a href="/html/products.html?catid=${category.catid}&pid=${product.pid}" class="categorylink">${product.name}</a>`;
+  const breadcrumbLis = document.querySelector('nav ol').querySelectorAll('li');
+  if (breadcrumbLis[4]) {
+    breadcrumbLis[4].innerHTML =
+      `<a href="/html/products.html?catid=${category.catid}&pid=${product.pid}" class="categorylink">
+         <span class="crumb-prod-name"></span>
+       </a>`;
+    const span = breadcrumbLis[4].querySelector('.crumb-prod-name');
+    if (span) span.textContent = product.name;
+  }
 
   
 
   descContainer.innerHTML = `
-    <h2>${product.name}</h2>
-    <p>${product.description || ''}</p>
-    <p class="productprice">$${product.price}</p>
+    <h2 class="producttitle"></h2>
+    <p class="productdescription"></p>
+    <p class="productprice">$</p>
     <button class="addToCart" onclick="addToCartHandler(${product.pid})">Add to Cart</button>
   `;
+  const productName = descContainer.querySelector('.producttitle');
+  const productDescription = descContainer.querySelector('.productdescription');
+  const productPrice = descContainer.querySelector('.productprice');
+  if (productName) productName.textContent = product.name || '';
+  if (productDescription) productDescription.textContent = product.description || '';
+  if (productPrice) productPrice.textContent = `$${product.price}` || '';
+
+
 
   try {
     const res = await fetch(`/products/${pid}/images`);

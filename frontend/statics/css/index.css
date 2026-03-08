@@ -332,11 +332,16 @@ nav a:hover{
     text-decoration: none;
     color:black;
 }
+.productpricewrapper{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
 .productprice{
     font-size: medium;
     padding: 5px 3px;
     display: inline;
-    margin-right: 36px;
+    
 }
 .addToCart{
     border: none;
