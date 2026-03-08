@@ -1,4 +1,13 @@
-document.addEventListener('DOMContentLoaded', () => {
+let csrfToken = null;
+
+async function initCsrf() {
+  const res  = await fetch('/csrf-token', { credentials: 'include' });
+  const data = await res.json();
+  csrfToken  = data.csrfToken;
+}
+
+document.addEventListener('DOMContentLoaded', async() => {
+  await initCsrf();
   loadData();
 });
 
@@ -46,7 +55,7 @@ function renderProducts(rows, categories, nextPid) {
             required
             minlength="1"
             maxlength="50"
-            pattern="[A-Za-z0-9 ,.'-]{1,50}">
+            pattern="[A-Za-z0-9 ,.'\-]{1,50}">
         </td>
 
         <td>
@@ -54,7 +63,7 @@ function renderProducts(rows, categories, nextPid) {
             rows="2" 
             class="description" 
             maxlength="600"
-            pattern="[A-Za-z0-9 ,.'-]{0,600}">${p.description}</textarea>
+            pattern="[A-Za-z0-9 ,.'\-]{0,600}">${p.description}</textarea>
         </td>
 
         <td>
@@ -74,8 +83,8 @@ function renderProducts(rows, categories, nextPid) {
         </td>
 
         <td>
-          <button class="save-btn" onclick="saveProductHandler(${p.pid})">Save</button>
-          <button class="delete-btn" onclick="deleteProductHandler(${p.pid})">Delete</button>
+          <button class="save-btn" data-pid="${p.pid}">Save</button>
+          <button class="delete-btn" data-pid="${p.pid}">Delete</button>
         </td>
       </tr>
     `;
@@ -103,7 +112,7 @@ function renderProducts(rows, categories, nextPid) {
         required
         minlength="1"
         maxlength="50"
-        pattern="[A-Za-z0-9 ,.'-]{1,50}"
+        pattern="[A-Za-z0-9 ,.'\-]{1,50}"
         placeholder="Product name">
       </td>
 
@@ -112,7 +121,7 @@ function renderProducts(rows, categories, nextPid) {
         rows="2"
         value=""
         maxlength="600"
-        pattern="[A-Za-z0-9 ,.'-]{0,600}"
+        pattern="[A-Za-z0-9 ,.'\-]{0,600}"
         placeholder="Product description"></textarea>
       </td>
 
@@ -131,12 +140,24 @@ function renderProducts(rows, categories, nextPid) {
       </td>
 
       <td>
-        <button onclick="createProductHandler('new')" class="create-btn">Create</button>
+        <button data-pid="new" class="create-btn">Create</button>
       </td>
     </tr>
   `;
 
   tbody.innerHTML = existingRowsHtml + newRowHtml;
+
+  tbody.querySelectorAll('.save-btn').forEach(btn => {
+    const pid = btn.getAttribute('data-pid');
+    btn.addEventListener('click', () => saveProductHandler(pid));
+  });
+
+  tbody.querySelectorAll('.delete-btn').forEach(btn => {
+    const pid = btn.getAttribute('data-pid');
+    btn.addEventListener('click', () => deleteProductHandler(pid));
+  });
+
+  tbody.querySelector('.create-btn').addEventListener('click', () => createProductHandler('new'));
 }
 
 
@@ -185,10 +206,12 @@ async function saveProductHandler(pid) {
   if (imageFile) {
     formData.append('image', imageFile);
   }
+  formData.append('csrfToken', csrfToken);
 
   try {
     const res = await fetch(`/products/${pid}`, {
       method: 'PUT',
+      credentials: 'include', 
       body: formData
     });
     loadData();
@@ -207,8 +230,13 @@ function deleteProductHandler(pid){
   if (!confirmDelete) {
     return;
   }
+  const formData = new FormData();
+  formData.append('csrfToken', csrfToken);
+  
   fetch(`/products/${pid}`, {
-    method: 'DELETE'
+    method: 'DELETE',
+    credentials: 'include',
+    body: formData
   }).then(res => {
     if (!res.ok) {
       alert('Delete failed');
@@ -260,9 +288,11 @@ function createProductHandler(pid){
   if (imageFile) {
     formData.append('image', imageFile);
   }
-
+  formData.append('csrfToken', csrfToken);
+  
   fetch('/products', {
     method: 'POST',
+    credentials: 'include',
     body: formData
   }).then(res => {
     loadData();

@@ -108,11 +108,19 @@ function renderContent(products, categories, catid) {
         </div>
         <div class="productpricewrapper">
           <p class="productprice">$</p>
-          <button class="addToCart" onclick="addToCartHandler(${p.pid})">Add to Cart</button>
+          <button class="addToCart" data-pid="${p.pid}">Add to Cart</button>
         </div>
       </div>
     </div>
   `).join('') || '<p>No products in this category yet.</p>';
+
+  productList.querySelectorAll('.addToCart').forEach(btn => {
+    const pid = Number(btn.getAttribute('data-pid'));
+    btn.addEventListener('click', () => {
+      addToCartHandler(pid);
+      renderCart(products);
+    });
+  });
 
   const productNameElements = productList.querySelectorAll('.productname a');
   const productPriceElements = productList.querySelectorAll('.productprice');

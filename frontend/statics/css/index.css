@@ -133,8 +133,9 @@ header i{
     display: block;
 }
 .cartitem{
-    display: inline-flex;
+    display: flex;
     margin-bottom: 10px;
+    align-items: flex-start;
 }
 .cartitemthumbnail{
     width: 90px;
@@ -149,6 +150,14 @@ header i{
     color:black;
     padding: 5px ;
 }
+.cartitem > a {
+  flex-shrink: 0;
+}
+.cartitem > div {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
 .cartitemdescription{
     padding: 10px 5px;
     color: #999999;
@@ -156,8 +165,9 @@ header i{
 }
 .quantitycontrol{
     padding: 10px 5px;
-    justify-content: right;
+    justify-content: flex-end;
     display: flex;
+    margin-left: auto; 
 }
 .quantityincrement,.quantitydecrement{
     border-radius: 100%;
@@ -368,3 +378,4 @@ footer div{
     padding-bottom: 0;
     margin-left: 30px;
 }
+

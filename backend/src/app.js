@@ -6,18 +6,10 @@ const fsp = fs.promises;
 const multer = require('multer');
 const app = express();
 const sharp = require('sharp');
-app.use(express.json());
-const staticsDir = path.join(__dirname, '..', '..', 'frontend', 'statics');
-const frontRoot  = path.join(__dirname, '..', '..', 'frontend');
 const Joi = require('joi');
 const sanitizeHtml = require('sanitize-html');
-
-app.use('/html', express.static(path.join(staticsDir, 'html')));
-app.use('/css',  express.static(path.join(staticsDir, 'css')));
-app.use('/img',  express.static(path.join(staticsDir, 'img')));
-app.use('/src',  express.static(path.join(frontRoot, 'src')));
-const htmlDir = path.join(staticsDir, 'html');
-
+const session = require('express-session');
+const crypto  = require('crypto');
 
 app.use((req, res, next) => {
   res.setHeader(
@@ -33,6 +25,51 @@ app.use((req, res, next) => {
   );
   next();
 });
+
+app.use(express.json());
+const staticsDir = path.join(__dirname, '..', '..', 'frontend', 'statics');
+const frontRoot  = path.join(__dirname, '..', '..', 'frontend');
+app.use('/html', express.static(path.join(staticsDir, 'html')));
+app.use('/css',  express.static(path.join(staticsDir, 'css')));
+app.use('/img',  express.static(path.join(staticsDir, 'img')));
+app.use('/src',  express.static(path.join(frontRoot, 'src')));
+const htmlDir = path.join(staticsDir, 'html');
+
+
+app.use(session({
+  secret: crypto.randomBytes(32).toString('hex'),
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    sameSite: 'strict',
+    secure: false
+  }
+}));
+
+function generateToken() {
+  return crypto.randomBytes(32).toString('hex');
+}
+
+app.use((req, res, next) => {
+  if (!req.session.csrfToken) {
+    req.session.csrfToken = generateToken();
+  }
+  next();
+});
+
+app.get('/csrf-token', (req, res) => {
+  res.json({ csrfToken: req.session.csrfToken });
+});
+
+function verifyCsrf(req, res) {
+  const tokenFromBody = req.body.csrfToken;
+  if (!tokenFromBody || tokenFromBody !== req.session.csrfToken) {
+    res.status(403).send('Invalid CSRF token');
+    return false;
+  }
+  return true;
+}
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(htmlDir, 'index.html'));
@@ -151,6 +188,7 @@ const productSchema = Joi.object({
 
 
 app.put('/categories/:catid', (req, res) => {
+  if (!verifyCsrf(req, res)) return;
   const catid = Number(req.params.catid);
   if (!Number.isInteger(catid) || catid <= 0) {
     return res.status(400).send('Invalid category id');
@@ -221,6 +259,7 @@ const upload = multer({
 
 
 app.put('/products/:pid', upload.single('image'),(req, res) => {
+  if (!verifyCsrf(req, res)) return;
   const pid = Number(req.params.pid);
   if (!Number.isInteger(pid) || pid <= 0) {
     return res.status(400).send('Invalid product id');
@@ -269,6 +308,7 @@ app.put('/products/:pid', upload.single('image'),(req, res) => {
 
 
 app.delete('/categories/:catid', (req, res) => {
+  if (!verifyCsrf(req, res)) return;
   const catid = req.params.catid;
   try {
     const stmt = db.prepare('DELETE FROM categories WHERE catid = ?');
@@ -283,6 +323,7 @@ app.delete('/categories/:catid', (req, res) => {
   }
 });
 app.delete('/products/:pid', async(req, res) => {
+  if (!verifyCsrf(req, res)) return;
   const pid = req.params.pid;
   try {
     const stmt = db.prepare('DELETE FROM products WHERE pid = ?');
@@ -308,6 +349,7 @@ app.delete('/products/:pid', async(req, res) => {
 
 
 app.post('/categories', (req, res) => {
+  if (!verifyCsrf(req, res)) return;
   const data = {
     name: req.body.name,
     description: req.body.description
@@ -358,6 +400,7 @@ const uploadTemp = multer({
 });
 
 app.post('/products', uploadTemp.single('image'), async (req, res) => {
+  if (!verifyCsrf(req, res)) return;
   const data = {
     catid: Number(req.body.catid),
     name: req.body.name,

@@ -1,4 +1,13 @@
-document.addEventListener('DOMContentLoaded', () => {
+let csrfToken = null;
+
+async function initCsrf() {
+  const res  = await fetch('/csrf-token', { credentials: 'include' });
+  const data = await res.json();
+  csrfToken  = data.csrfToken;
+}
+
+document.addEventListener('DOMContentLoaded', async() => {
+  await initCsrf();
   loadData();
 });
 
@@ -35,7 +44,7 @@ function renderCategories(rows, nextCatid) {
             required
             minlength="1"
             maxlength="50"
-            pattern="[A-Za-z0-9 ,.'-]{1,50}"
+            pattern="[A-Za-z0-9 ,.'\-]{1,50}"
             class="name">
         </td>
         <td>
@@ -43,12 +52,12 @@ function renderCategories(rows, nextCatid) {
             name="description"
             value="${c.description}"
             maxlength="200"
-            pattern="[A-Za-z0-9 ,.'-]{0,200}"
+            pattern="[A-Za-z0-9 ,.'\-]{0,200}"
             class="description">
         </td>
         <td> 
-          <button class="save-btn" onclick="saveCategoriesHandler(${c.catid})">Save</button>
-          <button class="delete-btn" onclick="deleteCategoriesHandler(${c.catid})">Delete</button>
+          <button class="save-btn" data-catid="${c.catid}">Save</button>
+          <button class="delete-btn" data-catid="${c.catid}">Delete</button>
         </td>
       </tr>
     `
@@ -68,7 +77,7 @@ function renderCategories(rows, nextCatid) {
         required
         minlength="1"
         maxlength="50"
-        pattern="[A-Za-z0-9 ,.'-]{1,50}"
+        pattern="[A-Za-z0-9 ,.'\-]{1,50}"
         placeholder="Category name">
       </td>
 
@@ -77,17 +86,38 @@ function renderCategories(rows, nextCatid) {
         class="description"
         value=""
         maxlength="200"
-        pattern="[A-Za-z0-9 ,.'-]{0,200}"
+        pattern="[A-Za-z0-9 ,.'\-]{0,200}"
         placeholder="Category description">
       </td>
 
       <td>
-        <button onclick="createCategoriesHandler('new')" class="create-btn">Create</button>
+        <button data-catid="new" class="create-btn">Create</button>
       </td>
     </tr>
   `;
 
   tbody.innerHTML = existingRowsHtml + newRowHtml;
+
+
+  tbody.querySelectorAll('.save-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const catid = btn.closest('tr').dataset.catid;
+      saveCategoriesHandler(Number(catid));
+    });
+  });
+
+  tbody.querySelectorAll('.delete-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const catid = btn.closest('tr').dataset.catid;
+      deleteCategoriesHandler(Number(catid));
+    });
+  });
+
+  tbody.querySelectorAll('.create-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      createCategoriesHandler('new');
+    });
+  });
 }
 
 
@@ -105,14 +135,22 @@ async function saveCategoriesHandler(catid) {
   const tr = document.querySelector(`tr[data-catid="${catid}"]`);
   const name = tr.querySelector('.name').value;
   const description = tr.querySelector('.description').value;
-
+  if (!isSafeText(name, 1, 50)) {
+    alert('Invalid category name');
+    return;
+  }
+  if (!isSafeText(description, 0, 200)) {
+    alert('Invalid category description');
+    return;
+  }
   try {
     const res = await fetch(`/categories/${catid}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ name, description })
+      credentials: 'include',
+      body: JSON.stringify({ name, description, csrfToken })
     });
     loadData();
     if (!res.ok) {
@@ -123,15 +161,6 @@ async function saveCategoriesHandler(catid) {
     console.error(err);
     alert('Network error');
   }
-
-  if (!isSafeText(name, 1, 50)) {
-    alert('Invalid category name');
-    return;
-  }
-  if (!isSafeText(description, 0, 200)) {
-    alert('Invalid category description');
-    return;
-  }
 }
 
 function deleteCategoriesHandler(catid){
@@ -140,7 +169,12 @@ function deleteCategoriesHandler(catid){
     return;
   }
   fetch(`/categories/${catid}`, {
-    method: 'DELETE'
+    method: 'DELETE',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ csrfToken })
   }).then(res => {
     if (!res.ok) {
       alert('Delete failed');
@@ -177,7 +211,8 @@ function createCategoriesHandler(catid){
     headers: {
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({ name, description })
+    credentials: 'include',
+    body: JSON.stringify({ name, description, csrfToken })
   }).then(res => {
     loadData();
     if (!res.ok) {

@@ -107,7 +107,7 @@ async function renderContent(products, categories, catid, pid) {
     <h2 class="producttitle"></h2>
     <p class="productdescription"></p>
     <p class="productprice">$</p>
-    <button class="addToCart" onclick="addToCartHandler(${product.pid})">Add to Cart</button>
+    <button class="addToCart" data-pid="${product.pid}">Add to Cart</button>
   `;
   const productName = descContainer.querySelector('.producttitle');
   const productDescription = descContainer.querySelector('.productdescription');
@@ -115,7 +115,10 @@ async function renderContent(products, categories, catid, pid) {
   if (productName) productName.textContent = product.name || '';
   if (productDescription) productDescription.textContent = product.description || '';
   if (productPrice) productPrice.textContent = `$${product.price}` || '';
-
+  document.querySelector('.addToCart').addEventListener('click', () => {
+    addToCartHandler(product.pid);
+    renderCart(products);
+  });
 
 
   try {

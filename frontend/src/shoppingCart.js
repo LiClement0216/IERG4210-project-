@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 export function addToCartHandler(pid) {
+  pid = Number(pid);
   const cart = loadCart();
   const existing = cart.find(item => item.pid === pid);
   if (existing) {
@@ -29,7 +30,7 @@ export function renderCart(products) {
   if (!cartContainer) return;
 
   const subtotal = cart.reduce((sum, item) => {
-    const product = products.find(p => p.pid === item.pid);
+    const product = products.find(p => Number(p.pid) === Number(item.pid));
     return sum + (product ? product.price * item.quantity : 0);
   }, 0);
 
@@ -39,11 +40,11 @@ export function renderCart(products) {
   }
 
   cartContainer.innerHTML = cart.map(item => {
-    const product = products.find(p => p.pid === item.pid);
+    const product = products.find(p => Number(p.pid) === Number(item.pid));
     if (!product) return '';
 
     const imgSrc = `/img/products/${product.pid}/thumb.jpg`;
-
+    
     return `
       <div class="cartitem">
         <a href="/html/products.html?catid=${product.catid}&pid=${product.pid}">
@@ -61,20 +62,43 @@ export function renderCart(products) {
           </div>
           <div class="quantitycontrol">
             <button class="quantityincrement"
-                    onclick="updateQuantity(${item.pid}, ${item.quantity + 1})">+</button>
+                    data-pid="${item.pid}">+</button>
             <span class="quantity">${item.quantity}</span>
             <button class="quantitydecrement"
-                    onclick="updateQuantity(${item.pid}, ${item.quantity - 1})">-</button>
+                    data-pid="${item.pid}">-</button>
           </div>
         </div>
       </div>
     `;
   }).join('');
+
+  cartContainer.querySelectorAll('.quantityincrement').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const pid = Number(btn.dataset.pid);
+      const cart = loadCart();
+      const item = cart.find(i => Number(i.pid) === pid);
+      const newQty = (item ? item.quantity : 0) + 1;
+      updateQuantity(pid, newQty);
+      renderCart(products);
+    });
+  });
+
+  cartContainer.querySelectorAll('.quantitydecrement').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const pid = Number(btn.dataset.pid);
+      const cart = loadCart();
+      const item = cart.find(i => Number(i.pid) === pid);
+      const newQty = (item ? item.quantity : 0) - 1;
+      updateQuantity(pid, newQty);
+      renderCart(products);
+    });
+  });
+
   const cartitemnames = cartContainer.querySelectorAll('.cartitemname');
   const cartitemdescriptions = cartContainer.querySelectorAll('.cartitemdescription');
   const cartitemprices = cartContainer.querySelectorAll('.productprice');
   cart.forEach((item, index) => {
-    const product = products.find(p => p.pid === item.pid);
+    const product = products.find(p => Number(p.pid) === Number(item.pid));
     if (product) {
       if (cartitemnames[index]) cartitemnames[index].textContent = product.name || '';
       if (cartitemdescriptions[index]) cartitemdescriptions[index].textContent = product.description || '';
@@ -84,6 +108,7 @@ export function renderCart(products) {
 }
 
 export function removeFromCart(pid) {
+  pid = Number(pid);
   let cart = loadCart();
   cart = cart.filter(item => item.pid !== pid);
   saveCart(cart);
@@ -91,6 +116,8 @@ export function removeFromCart(pid) {
 }
 
 export function updateQuantity(pid, quantity) {
+  pid = Number(pid);
+  quantity = Number(quantity);
   const cart = loadCart();
   const item = cart.find(item => item.pid === pid);
     if (item) {
