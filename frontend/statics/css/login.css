@@ -1,0 +1,22 @@
+table{
+    background-color: rgb(253, 245, 245);
+    border-collapse: separate;
+    border-radius: 10px;
+    padding: 40px 20px 20px 20px;
+    margin-top: 20px;
+}
+.login-btn{
+    border: none;
+    background-color: rgb(255, 255, 255);
+    color: rgb(114, 78, 78);
+    padding: 5px 10px;
+    border-radius: 8px;
+    width: 80px;
+    height: 35px;
+    display: block;
+    margin: 0 auto;
+}
+.login-btn:hover{
+    background-color: rgb(212, 203, 203);
+    color: rgb(158, 110, 110);
+}
