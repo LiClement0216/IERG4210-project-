@@ -63,8 +63,8 @@ app.get('/csrf-token', (req, res) => {
 });
 
 function verifyCsrf(req, res) {
-  const tokenFromBody = req.body.csrfToken;
-  if (!tokenFromBody || tokenFromBody !== req.session.csrfToken) {
+  const tokenFromRequest = req.headers['x-csrf-token'] || req.body.csrfToken;
+  if (!tokenFromRequest || tokenFromRequest !== req.session.csrfToken) {
     res.status(403).send('Invalid CSRF token');
     return false;
   }
@@ -87,6 +87,10 @@ app.get('/products.html', (req, res) => {
   res.sendFile(path.join(htmlDir, 'products.html'));
 });
 
+app.get('/login.html', (req, res) => {           
+  res.sendFile(path.join(htmlDir, 'login.html'));
+});
+/*
 app.get('/cakes/:filename', (req, res) => {
   const filename = req.params.filename;             
   res.sendFile(path.join(htmlDir, 'cakes', filename));
@@ -101,7 +105,7 @@ app.get('/macarons/:filename', (req, res) => {
   const filename = req.params.filename;             
   res.sendFile(path.join(htmlDir, 'macarons', filename));
 });
-
+*/
 
 
 

@@ -147,7 +147,8 @@ async function saveCategoriesHandler(catid) {
     const res = await fetch(`/categories/${catid}`, {
       method: 'PUT',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': csrfToken
       },
       credentials: 'include',
       body: JSON.stringify({ name, description, csrfToken })
@@ -172,7 +173,8 @@ function deleteCategoriesHandler(catid){
     method: 'DELETE',
     credentials: 'include',
     headers: {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': csrfToken
     },
     body: JSON.stringify({ csrfToken })
   }).then(res => {
@@ -209,7 +211,8 @@ function createCategoriesHandler(catid){
   fetch('/categories', {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': csrfToken
     },
     credentials: 'include',
     body: JSON.stringify({ name, description, csrfToken })

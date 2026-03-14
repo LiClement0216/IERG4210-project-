@@ -212,6 +212,9 @@ async function saveProductHandler(pid) {
     const res = await fetch(`/products/${pid}`, {
       method: 'PUT',
       credentials: 'include', 
+      headers: {
+        'X-CSRF-Token': csrfToken
+      },
       body: formData
     });
     loadData();
@@ -236,6 +239,9 @@ function deleteProductHandler(pid){
   fetch(`/products/${pid}`, {
     method: 'DELETE',
     credentials: 'include',
+    headers: {
+      'X-CSRF-Token': csrfToken
+    },
     body: formData
   }).then(res => {
     if (!res.ok) {
@@ -293,6 +299,9 @@ function createProductHandler(pid){
   fetch('/products', {
     method: 'POST',
     credentials: 'include',
+    headers: {
+      'X-CSRF-Token': csrfToken
+    },
     body: formData
   }).then(res => {
     loadData();
