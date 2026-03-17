@@ -50,6 +50,23 @@ app.use(session({
   }
 }));
 
+function requireAdmin(req, res, next) {
+  if (!req.session || !req.session.username) {
+    if (req.xhr || req.headers.accept.indexOf('json') > -1) {
+      res.status(401).send('Unauthorized. please login');
+    }
+    return res.redirect('/login.html');
+  }
+  
+  if (req.session.isAdmin !== 1) {
+    if (req.xhr || req.headers.accept.indexOf('json') > -1) {
+      res.status(403).send('Forbidden. Admins only');
+    }
+    return res.redirect('/');
+  }
+  next();
+}
+
 function generateToken() {
   return crypto.randomBytes(32).toString('hex');
 }
@@ -117,10 +134,10 @@ app.get('/macarons/:filename', (req, res) => {
 
 
 
-app.get('/categoriesCRUD', (req, res) => {
+app.get('/categoriesCRUD', requireAdmin,(req, res) => {
   res.sendFile(path.join(htmlDir, 'admin', 'categoriesCRUD.html'));
 });
-app.get('/productsCRUD', (req, res) => {
+app.get('/productsCRUD', requireAdmin, (req, res) => {
   res.sendFile(path.join(htmlDir, 'admin', 'productsCRUD.html'));
 });
 
@@ -198,7 +215,7 @@ const productSchema = Joi.object({
 
 
 
-app.put('/categories/:catid', (req, res) => {
+app.put('/categories/:catid', requireAdmin,(req, res) => {
   if (!verifyCsrf(req, res)) return;
   const catid = Number(req.params.catid);
   if (!Number.isInteger(catid) || catid <= 0) {
@@ -269,7 +286,7 @@ const upload = multer({
 });
 
 
-app.put('/products/:pid', upload.single('image'),(req, res) => {
+app.put('/products/:pid', requireAdmin,upload.single('image'),(req, res) => {
   if (!verifyCsrf(req, res)) return;
   const pid = Number(req.params.pid);
   if (!Number.isInteger(pid) || pid <= 0) {
@@ -318,7 +335,7 @@ app.put('/products/:pid', upload.single('image'),(req, res) => {
 
 
 
-app.delete('/categories/:catid', (req, res) => {
+app.delete('/categories/:catid', requireAdmin, (req, res) => {
   if (!verifyCsrf(req, res)) return;
   const catid = req.params.catid;
   try {
@@ -333,7 +350,7 @@ app.delete('/categories/:catid', (req, res) => {
     res.status(500).send('DB error');
   }
 });
-app.delete('/products/:pid', async(req, res) => {
+app.delete('/products/:pid', requireAdmin, async(req, res) => {
   if (!verifyCsrf(req, res)) return;
   const pid = req.params.pid;
   try {
@@ -359,7 +376,7 @@ app.delete('/products/:pid', async(req, res) => {
 
 
 
-app.post('/categories', (req, res) => {
+app.post('/categories', requireAdmin, (req, res) => {
   if (!verifyCsrf(req, res)) return;
   const data = {
     name: req.body.name,
@@ -410,7 +427,7 @@ const uploadTemp = multer({
   limits: { fileSize: 10 * 1024 * 1024 }
 });
 
-app.post('/products', uploadTemp.single('image'), async (req, res) => {
+app.post('/products', requireAdmin, uploadTemp.single('image'), async (req, res) => {
   if (!verifyCsrf(req, res)) return;
   const data = {
     catid: Number(req.body.catid),

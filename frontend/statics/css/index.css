@@ -93,16 +93,24 @@ header h1{
     font-size: x-large;
     color: #5a3e3e;
 }
-header .CRUDlinks{
-    display: inline;
-    margin-left: 300px;
-    padding: 0 10px;
+header .CRUDlinks {
+    position: absolute;
+    right: 80px;
+    top: 0;
+    height: 50px;
+    display: inline-flex;
+    align-items: center;
+    gap: 15px; 
+    white-space: nowrap;
 }
-header a{
+
+header .CRUDlinks span {
+    color: #5a3e3e;
+}
+
+header a {
     text-decoration: none;
     color: #6c86fc;
-    align-self: right;
-    padding: 10px;
 }
 header i{
     color: #5a3e3e;
@@ -115,10 +123,12 @@ header i{
     margin-right: 15px;
     width: auto;
     max-width: 300px;
+    align-items: center;
 }
 .shoppingcart i{
     right: 0px;
     position: absolute;
+    font-size: 36px;
 }
 .cartwindow{
     background-color: #f1f1f1;
@@ -385,6 +395,27 @@ footer div{
     body, html {
         overflow-x: hidden;
     }
-
-    
+    header h1 {
+        font-size: medium; 
+        padding: 0;
+        margin-left: 10px;
+    }
+    header .CRUDlinks span {
+        display: none; 
+    }
+    header .CRUDlinks {
+        gap: 5px;
+        right: 40px;
+    }
+    header a {
+        font-size: 12px;
+        padding: 0 3px;
+    }
+    .shoppingcart i{
+        font-size: 24px;
+        top: 70%;
+        align-self: center;
+        height: 50px;
+        
+    }
 }
