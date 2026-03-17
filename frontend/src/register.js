@@ -28,33 +28,36 @@ async function loadData() {
   }
 }
 
-document.getElementById('login-form').addEventListener('submit', async (e) => {
+document.getElementById('register-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const username = document.getElementById('username').value;
   const password = document.getElementById('password').value;
+  const confirmPassword = document.getElementById('confirm-password').value;
+  if (password !== confirmPassword) {
+    alert('Passwords do not match!');
+    return;
+  }
   const csrfTokenInput = document.querySelector('input[name="csrfToken"]');
   csrfTokenInput.value = csrfToken;
-  fetch('/login', {
+  fetch('/register', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'X-CSRF-Token': csrfToken
     },
     credentials: 'include',
-    body: JSON.stringify({ username, password, csrfToken })
-  }).then(async res => {
+    body: JSON.stringify({ username, password, csrfToken, confirmPassword })
+  }).then(res => {
     if (res.ok) {
-      const data = await res.json(); 
-      alert('Login successful!');
-      if(data.isAdmin === 1){
-        window.location.href = '/productsCRUD';
-      }
-      else {window.location.href = '/';}
+      alert('Registration successful! Please log in.');
+      window.location.href = '/login.html';
     } else {
-        const errorText = await res.text(); 
-        alert('Login failed: ' + errorText);
-    }
+      res.json().then(data => {
+        alert('Registration failed: ' + data.message);
+      });
+    } 
   }).catch(err => {
     console.error(err);
+    alert('An error occurred during registration.');
   });
 });

@@ -69,7 +69,6 @@ function renderContent(products, categories, catid) {
  
   const desc = document.querySelector('.categorydescription');
   const productList = document.querySelector('.productlist');
-
   if (category && desc) {
     desc.innerHTML = 
       `<h1 class="category-title"></h1>

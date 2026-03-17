@@ -10,6 +10,7 @@ const Joi = require('joi');
 const sanitizeHtml = require('sanitize-html');
 const session = require('express-session');
 const crypto  = require('crypto');
+const bcrypt = require('bcrypt');
 
 app.use((req, res, next) => {
   res.setHeader(
@@ -37,12 +38,14 @@ const htmlDir = path.join(staticsDir, 'html');
 
 
 app.use(session({
-  secret: crypto.randomBytes(32).toString('hex'),
+  name: 'dnd_auth_session',
+  secret: 'hardcodedSecret',
   resave: false,
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
     sameSite: 'strict',
+    maxAge: 3 * 24 * 60 * 60 * 1000,
     secure: false
   }
 }));
@@ -89,6 +92,10 @@ app.get('/products.html', (req, res) => {
 
 app.get('/login.html', (req, res) => {           
   res.sendFile(path.join(htmlDir, 'login.html'));
+});
+
+app.get('/register.html', (req, res) => {           
+  res.sendFile(path.join(htmlDir, 'register.html'));
 });
 /*
 app.get('/cakes/:filename', (req, res) => {
@@ -492,10 +499,56 @@ app.get('/products/:pid/images', (req, res) => {
 });
 
 
+app.post('/register', (req, res) => {
+  if (!verifyCsrf(req, res)) return;
+  const { username, password, confirmPassword } = req.body;
+  if (password !== confirmPassword) {
+    return res.status(400).send('Passwords do not match');
+  }
+  try {
+    const existingUser = db.prepare('SELECT * FROM users WHERE email = ?').get(username);
+    if (existingUser) {
+      return res.status(400).send('Username already taken');
+    }
+
+    const hashedPassword = bcrypt.hashSync(password, 10);
+
+    db.prepare('INSERT INTO users (email, password) VALUES (?, ?)').run(username, hashedPassword);
+    res.status(201).send('User registered');
+  } catch (err) {
+    console.error('Registration error:', err);
+    res.status(500).send('DB error');
+  }
+});
 
 
-
-
+app.post('/login', (req, res) => {
+  if (!verifyCsrf(req, res)) return;
+  const { username, password } = req.body;
+  try {
+    const user = db.prepare('SELECT * FROM users WHERE email = ?').get(username); 
+    if (!user || !bcrypt.compareSync(password, user.password)) {
+      return res.status(401).send('Invalid credentials');
+    }
+    req.session.regenerate(err => {
+      if (err) {
+        console.error('Session regeneration error:', err);
+        return res.status(500).send('Session error');
+      }
+      req.session.userId = user.userid;
+      req.session.username = user.email;
+      req.session.isAdmin = user.isAdmin;
+    });
+    
+    res.status(200).json({ 
+      message: 'Login successful', 
+      isAdmin: user.isAdmin 
+    });
+  } catch (err) {
+    console.error('Login error:', err);
+    res.status(500).send('DB error');
+  }
+});
 
 
 

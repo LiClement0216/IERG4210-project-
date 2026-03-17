@@ -20,12 +20,12 @@
             <ol>
                 <li><a href="/">Home</a></li>
                 <li> > </li>
-                <li><a href="#">login</a></li>
+                <li><a href="#">register</a></li>
             </ol>
         </nav>
         <section class="content">
-            <h2>Login</h2>
-            <form id="login-form">
+            <h2>Register</h2>
+            <form id="register-form">
                 <input type="hidden" name="csrfToken" value="">
                 <table>
                     <tbody>
@@ -38,7 +38,11 @@
                             <td><input type="password" id="password"></td>
                         </tr>
                         <tr>
-                            <td colspan="2"><input type="submit" class="login-btn" value="Login"></td>
+                            <td>Confirm password:</td>
+                            <td><input type="password" id="confirm-password"></td>
+                        </tr>
+                        <tr>
+                            <td colspan="2"><button class="login-btn">Register</button></td>
                         </tr>
                     </tbody>
                 </table>
@@ -50,7 +54,7 @@
         <div>1155214218@2026</div>
         <div>Images not owned by me, site only for demo and education purpose.</div>
     </footer>
-    <script src="/src/login.js"></script>
+    <script src="/src/register.js"></script>
 
 
 </body>
