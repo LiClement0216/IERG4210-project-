@@ -22,7 +22,12 @@ async function loadData(catid, pid) {
     renderCategories(categories);
     renderContent(products, categories, catid, pid);
 
-    renderCart(products);
+    const waitForAuth = setInterval(() => {
+      if (window.currentAppUser !== undefined) {
+        clearInterval(waitForAuth);
+        renderCart(products);
+      }
+    }, 50);
 
     window.addToCartHandler = (pid) => {
       addToCartHandler(pid);

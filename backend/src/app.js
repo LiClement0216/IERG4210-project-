@@ -44,7 +44,7 @@ app.use(session({
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
-    sameSite: 'strict',
+    sameSite: 'lax',
     maxAge: 3 * 24 * 60 * 60 * 1000,
     secure: false
   }
@@ -537,12 +537,18 @@ app.post('/login', (req, res) => {
       }
       req.session.userId = user.userid;
       req.session.username = user.email;
-      req.session.isAdmin = user.isAdmin;
-    });
-    
-    res.status(200).json({ 
-      message: 'Login successful', 
-      isAdmin: user.isAdmin 
+      req.session.isAdmin = user.isAdmin === 1 ? 1 : 0;
+
+      req.session.save(err => {
+        if (err) {
+          console.error('Session save error:', err);
+          return res.status(500).send('Session error');
+        }        
+        res.status(200).json({ 
+          message: 'Login successful', 
+          isAdmin: req.session.isAdmin
+        });
+      });
     });
   } catch (err) {
     console.error('Login error:', err);
@@ -550,16 +556,25 @@ app.post('/login', (req, res) => {
   }
 });
 
+app.get('/auth/status', (req, res) => {
+  if (req.session && req.session.username) {
+    res.json({ loggedIn: true, username: req.session.username, isAdmin: req.session.isAdmin });
+  } else {
+    res.json({ loggedIn: false, username: 'Guest', isAdmin: 0 });
+  }
+});
 
-
-
-
-
-
-
-
-
-
+app.post('/logout', (req, res) => {
+  req.session.destroy(err => {
+    if (err) {
+      console.error('Logout error:', err);
+      res.status(500).send('Logout error');
+    } else {
+      res.clearCookie('dnd_auth_session');
+      res.json({ message: 'Logged out successfully' });
+    }
+  });
+});
 
 
 

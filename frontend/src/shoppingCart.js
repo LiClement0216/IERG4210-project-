@@ -1,15 +1,16 @@
+function getCartKey(){
+  const username = window.currentAppUser || 'Guest';
+  return `cart_${username}`;
+}
+
 export function saveCart(cart) {
-  localStorage.setItem('cart', JSON.stringify(cart));
+  localStorage.setItem(getCartKey(), JSON.stringify(cart));
 }
 
 export function loadCart() {
-  const s = localStorage.getItem('cart');
+  const s = localStorage.getItem(getCartKey());
   return s ? JSON.parse(s) : [];
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-  loadCart();
-});
 
 export function addToCartHandler(pid) {
   pid = Number(pid);

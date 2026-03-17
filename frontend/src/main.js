@@ -18,7 +18,12 @@ async function loadData(catid) {
     const products   = await productsRes.json();
     const categories = await categoriesRes.json();
     
-    renderCart(products);
+    const waitForAuth = setInterval(() => {
+      if (window.currentAppUser !== undefined) {
+        clearInterval(waitForAuth);
+        renderCart(products);
+      }
+    }, 50);
 
     window.addToCartHandler = (pid) => {
       addToCartHandler(pid);
@@ -69,6 +74,7 @@ function renderContent(products, categories, catid) {
  
   const desc = document.querySelector('.categorydescription');
   const productList = document.querySelector('.productlist');
+
   if (category && desc) {
     desc.innerHTML = 
       `<h1 class="category-title"></h1>

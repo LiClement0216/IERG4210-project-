@@ -15,7 +15,12 @@ async function loadData() {
     const categories = await categoriesRes.json();
     renderCategories(categories);
 
-    renderCart(products);
+    const waitForAuth = setInterval(() => {
+      if (window.currentAppUser !== undefined) {
+        clearInterval(waitForAuth);
+        renderCart(products);
+      }
+    }, 50);
 
     window.addToCartHandler = (pid) => {
       addToCartHandler(pid);
