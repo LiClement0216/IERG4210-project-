@@ -31,7 +31,8 @@
                     <tbody>
                         <tr>
                             <td>Email:</td>
-                            <td><input type="text" id="username"></td>
+                            <td><input type="email" id="username"></td>
+                            <span id="username-error">Invalid email format.</span>
                         </tr>
                         <tr>
                             <td>Password:</td>
@@ -39,7 +40,10 @@
                         </tr>
                         <tr>
                             <td>Confirm password:</td>
-                            <td><input type="password" id="confirm-password"></td>
+                            <td>
+                                <input type="password" id="confirm-password">
+                                <br><span id="password-error">Passwords do not match.</span>
+                            </td>
                         </tr>
                         <tr>
                             <td colspan="2"><button class="login-btn">Register</button></td>
@@ -54,7 +58,7 @@
         <div>1155214218@2026</div>
         <div>Images not owned by me, site only for demo and education purpose.</div>
     </footer>
-    <script src="/src/register.js"></script>
+    <script src="/src/register.js" defer></script>
 
 
 </body>

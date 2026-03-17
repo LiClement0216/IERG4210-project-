@@ -8,33 +8,52 @@ async function initCsrf() {
 
 document.addEventListener('DOMContentLoaded', async() => {
   await initCsrf();
-  loadData();
 });
 
-async function loadData() {
-  try {
-    const [productsRes, categoriesRes] = await Promise.all([
-      fetch('/productsR'),
-      fetch('/categoriesR')
-    ]);
-
-    const products = await productsRes.json();
-    const categories = await categoriesRes.json();
-    const nextCatid =
-    categories.length === 0 ? 1 : Math.max(...categories.map(c => c.catid)) + 1;
-    renderCategories(categories, nextCatid);
-  } catch (err) {
-    console.error(err);
-  }
+function isSafeText(value) {
+  const v = value.trim();
+  if (v.length < 1 || v.length > 50) return false;
+  if (/[<>]/.test(v)) return false;
+  return true;
 }
+function isEmail(value) {
+  const v = value.trim();
+  if (v.length < 3 || v.length > 50) return false;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; 
+  return emailRegex.test(v);
+}
+
+const usernameInput = document.getElementById('username');
+const passwordInput = document.getElementById('password');
+const confirmInput = document.getElementById('confirm-password');
+const passError = document.getElementById('password-error');
+const userError = document.getElementById('username-error');
+usernameInput.addEventListener('blur', () => {
+    if (!isEmail(usernameInput.value) && usernameInput.value !== '') {
+        userError.style.display = 'block';
+    } else {
+        userError.style.display = 'none';
+    }
+});
+confirmInput.addEventListener('blur', () => {
+    if (passwordInput.value !== confirmInput.value && confirmInput.value !== '') {
+        passError.style.display = 'block';
+    } else {
+        passError.style.display = 'none';
+    }
+});
 
 document.getElementById('register-form').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const username = document.getElementById('username').value;
-  const password = document.getElementById('password').value;
-  const confirmPassword = document.getElementById('confirm-password').value;
+  const username = usernameInput.value;
+  const password = passwordInput.value;
+  const confirmPassword = confirmInput.value;
   if (password !== confirmPassword) {
-    alert('Passwords do not match!');
+    passError.style.display = 'block';
+    return;
+  }
+  if (!isEmail(usernameInput.value)) { 
+    userError.style.display = 'block';
     return;
   }
   const csrfTokenInput = document.querySelector('input[name="csrfToken"]');
@@ -46,14 +65,14 @@ document.getElementById('register-form').addEventListener('submit', async (e) =>
       'X-CSRF-Token': csrfToken
     },
     credentials: 'include',
-    body: JSON.stringify({ username, password, csrfToken, confirmPassword })
+    body: JSON.stringify({ username, password, confirmPassword })
   }).then(res => {
     if (res.ok) {
       alert('Registration successful! Please log in.');
       window.location.href = '/login.html';
     } else {
-      res.json().then(data => {
-        alert('Registration failed: ' + data.message);
+      res.text().then(data => {
+        alert('Registration failed: ' + data);
       });
     } 
   }).catch(err => {

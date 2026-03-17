@@ -516,12 +516,27 @@ app.get('/products/:pid/images', (req, res) => {
 });
 
 
+
+
+
+const registerSchema = Joi.object({
+  username: Joi.string()
+    .trim()
+    .min(3)
+    .max(50)
+    .custom((value) => escapeHtml(value), 'escape HTML')
+    .required(),
+  password: Joi.string().min(6).required(),
+  confirmPassword: Joi.string().valid(Joi.ref('password')).required()
+});
+
 app.post('/register', (req, res) => {
   if (!verifyCsrf(req, res)) return;
-  const { username, password, confirmPassword } = req.body;
-  if (password !== confirmPassword) {
-    return res.status(400).send('Passwords do not match');
+  const { error, value } = registerSchema.validate(req.body);
+  if (error) {
+    return res.status(400).send('Invalid input: ' + error.details[0].message);
   }
+  const { username, password, confirmPassword } = value;
   try {
     const existingUser = db.prepare('SELECT * FROM users WHERE email = ?').get(username);
     if (existingUser) {

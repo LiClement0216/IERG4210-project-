@@ -20,3 +20,8 @@ table{
     background-color: rgb(212, 203, 203);
     color: rgb(158, 110, 110);
 }
+#password-error, #username-error{
+    color: rgb(230, 67, 67);
+    font-size: small;
+    display: none;
+}
