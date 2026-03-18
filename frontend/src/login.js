@@ -29,7 +29,7 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
       const data = await res.json(); 
       alert('Login successful!');
       if(data.isAdmin === 1){
-        window.location.href = '/productsCRUD';
+        window.location.href = '/admin';
       }
       else {window.location.href = '/';}
     } else {

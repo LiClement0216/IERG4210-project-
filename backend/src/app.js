@@ -46,7 +46,7 @@ app.use(session({
     httpOnly: true,
     sameSite: 'lax',
     maxAge: 3 * 24 * 60 * 60 * 1000,
-    secure: false
+    secure: true
   }
 }));
 
@@ -118,6 +118,7 @@ app.get('/register.html', (req, res) => {
 app.get('/changePassword.html', (req, res) => {           
   res.sendFile(path.join(htmlDir, 'changePassword.html'));
 });
+
 /*
 app.get('/cakes/:filename', (req, res) => {
   const filename = req.params.filename;             
@@ -144,7 +145,9 @@ app.get('/categoriesCRUD', requireAdmin,(req, res) => {
 app.get('/productsCRUD', requireAdmin, (req, res) => {
   res.sendFile(path.join(htmlDir, 'admin', 'productsCRUD.html'));
 });
-
+app.get('/admin', requireAdmin, (req, res) => {
+  res.sendFile(path.join(htmlDir, 'admin', 'admin.html'));
+});
 
 
 

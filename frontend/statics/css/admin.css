@@ -1,0 +1,14 @@
+.adminlinktable{
+    margin:20px auto;
+    padding: 20px;
+}
+
+.adminlinktable td{
+    text-align: center;
+    padding: 10px;
+}
+
+.adminlink{
+    text-decoration: none;
+    color:rgb(102, 102, 236);
+}
