@@ -114,6 +114,10 @@ app.get('/login.html', (req, res) => {
 app.get('/register.html', (req, res) => {           
   res.sendFile(path.join(htmlDir, 'register.html'));
 });
+
+app.get('/changePassword.html', (req, res) => {           
+  res.sendFile(path.join(htmlDir, 'changePassword.html'));
+});
 /*
 app.get('/cakes/:filename', (req, res) => {
   const filename = req.params.filename;             
@@ -607,6 +611,54 @@ app.post('/logout', (req, res) => {
     }
   });
 });
+
+
+const changePasswordSchema = Joi.object({
+  currentPassword: Joi.string().required(),
+  newPassword: Joi.string().min(6).required(),
+  confirmNewPassword: Joi.string().valid(Joi.ref('newPassword')).required()
+});
+
+app.put('/change-password',(req,res)=>{
+  if(!verifyCsrf(req,res)) return;
+
+  if(!req.session || !req.session.username){
+    return res.status(401).send('Unauthorized. Please login.');
+  }
+
+  const { error, value } = changePasswordSchema.validate(req.body);
+  if (error) {
+    return res.status(400).send('Invalid input: ' + error.details[0].message);
+  }
+
+  const { currentPassword, newPassword } = value;
+
+  try{
+    const user = db.prepare('SELECT * FROM users WHERE email = ?').get(req.session.username);
+
+    if(!user || !bcrypt.compareSync(currentPassword, user.password)){
+      return res.status(400).send('Current password is incorrect');
+    }
+
+    const hashedNewPassword = bcrypt.hashSync(newPassword, 10);
+    db.prepare('UPDATE users SET password = ? WHERE email = ?').run(hashedNewPassword, req.session.username);
+    
+    req.session.destroy(err => {
+      if (err) {
+        console.error('Session destroy error:', err);
+        return res.status(500).send('Password updated, but failed to log out.');
+      }
+      res.clearCookie('dnd_auth_session');
+      res.status(200).send('Password successfully changed');
+    });
+  }catch (err) {
+    console.error('Change password error:', err);
+    res.status(500).send('Database error');
+  }
+})
+
+
+
 
 
 

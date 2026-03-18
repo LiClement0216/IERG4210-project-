@@ -83,6 +83,7 @@ header{
     position: fixed;
     box-shadow: rgba(99, 99, 99, 0.2) 0px 2px 8px 0px;
     z-index: 1;
+    align-items: center;
 }
 header h1{
     line-height: 50px;
@@ -93,6 +94,14 @@ header h1{
     font-size: x-large;
     color: #5a3e3e;
 }
+.menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 30px;
+    cursor: pointer;
+    color: inherit;
+}
 header .CRUDlinks {
     position: absolute;
     right: 80px;
@@ -100,7 +109,7 @@ header .CRUDlinks {
     height: 50px;
     display: inline-flex;
     align-items: center;
-    gap: 15px; 
+    gap: 20px; 
     white-space: nowrap;
 }
 
@@ -392,30 +401,130 @@ footer div{
 
 
 @media (max-width: 768px) {
-    body, html {
-        overflow-x: hidden;
+
+    .shoppingcart:hover .cartwindow {
+        display: none !important; 
     }
-    header h1 {
-        font-size: medium; 
-        padding: 0;
-        margin-left: 10px;
+
+    .shoppingcart.show-cart .cartwindow {
+        display: block !important;
+        position: absolute; 
+        right: 0;           
+        width: 300px;       
+        z-index: 10000;     
     }
-    header .CRUDlinks span {
+
+
+    
+
+    header:not(.admin-mode) .menu-toggle {
+        display: block;
+        position: absolute;
+        right: 80px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 30px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: inherit;
+    }
+
+
+    header:not(.admin-mode) #auth-links {
         display: none; 
-    }
-    header .CRUDlinks {
-        gap: 5px;
-        right: 40px;
-    }
-    header a {
-        font-size: 12px;
-        padding: 0 3px;
-    }
-    .shoppingcart i{
-        font-size: 24px;
-        top: 70%;
-        align-self: center;
-        height: 50px;
+        position: absolute;
+        top: 100%; 
+        left: 0 !important;
+        right: 0 !important;
         
+        width: 100vw !important;
+        height: auto !important;
+        min-height: fit-content !important;
+        
+        background-color: #faf8f8;
+        box-shadow: 0px 8px 16px rgba(0,0,0,0.3);
+        
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        gap: 0 !important; 
+        z-index: 9999;
+    }
+
+    header:not(.admin-mode) #auth-links.show-menu {
+        display: flex !important;
+    }
+
+    header:not(.admin-mode) #auth-links a, 
+    header:not(.admin-mode) #auth-links span {
+        display: block !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        padding: 15px 20px !important;
+        margin: 0 !important;
+        
+        white-space: normal !important; 
+        word-wrap: break-word !important; 
+        text-align: center !important;
+        
+        border-bottom: 1px solid #ddd;
+        line-height: 1.5;
+        background-color: #faf8f8 !important; 
+    }
+}
+
+@media (max-width: 1024px){
+    header.admin-mode .menu-toggle {
+        display: block;
+        position: absolute;
+        right: 80px;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
+    header.admin-mode #auth-links {
+        display: none; 
+        position: absolute;
+        top: 100%; 
+        left: 0 !important;
+        right: 0 !important;
+        
+        width: 100vw !important;
+        height: auto !important;
+        min-height: fit-content !important;
+        
+        background-color: #faf8f8;
+        box-shadow: 0px 8px 16px rgba(0,0,0,0.3);
+        
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        gap: 0 !important;
+        z-index: 9999;
+    }
+
+    header.admin-mode #auth-links.show-menu {
+        display: flex !important;
+    }
+
+    header.admin-mode #auth-links a, 
+    header.admin-mode #auth-links span {
+        display: block !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        padding: 15px 20px !important;
+        margin: 0 !important;
+        
+        white-space: normal !important; 
+        word-wrap: break-word !important; 
+        text-align: center !important;
+        
+        border-bottom: 1px solid #ddd;
+        line-height: 1.5;
     }
 }

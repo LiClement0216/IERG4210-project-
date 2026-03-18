@@ -2,6 +2,23 @@ import { addToCartHandler, renderCart, removeFromCart, updateQuantity } from './
 
 document.addEventListener('DOMContentLoaded', () => {
   loadData();
+
+  const cartIcon = document.querySelector('.shoppingcart i');
+  const cartContainer = document.querySelector('.shoppingcart');
+
+  if (cartIcon && cartContainer) {
+    cartIcon.addEventListener('click', (e) => {
+      if (window.innerWidth <= 768) {
+        e.preventDefault(); 
+        cartContainer.classList.toggle('show-cart');
+        
+        const authLinks = document.getElementById('auth-links');
+        if (authLinks && authLinks.classList.contains('show-menu')) {
+            authLinks.classList.remove('show-menu');
+        }
+      }
+    });
+  }
 });
 
 async function loadData() {

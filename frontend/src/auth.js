@@ -2,6 +2,17 @@ window.currentAppUser = 'Guest';
 
 document.addEventListener('DOMContentLoaded',async () => {
     const authLinksContainer = document.getElementById('auth-links');
+    const menuBtn = document.getElementById('mobile-menu-btn');
+    const header = document.querySelector('header');
+
+
+
+    if (menuBtn && authLinksContainer) {
+        menuBtn.addEventListener('click', () => {
+            authLinksContainer.classList.toggle('show-menu');
+        });
+    }
+
     if (!authLinksContainer) return;
 
     try {
@@ -9,14 +20,23 @@ document.addEventListener('DOMContentLoaded',async () => {
         const data = await res.json();
         window.currentAppUser = data.username;
         let html = '';
-        if (data.loggedIn) {
+        if(data.loggedIn){
+            if(data.isAdmin === 1){
+                if (header) header.classList.add('admin-mode');
+            } 
+            else{
+                if (header) header.classList.remove('admin-mode');
+            }
             html = `
                 <span>Welcome, ${data.username}!</span>
                 ${data.isAdmin ? '<a href="/productsCRUD">Products CRUD</a>' : ''}
                 ${data.isAdmin ? '<a href="/categoriesCRUD">Categories CRUD</a>' : ''}
                 <a href="#" id="logout-btn">Logout</a>
+                <a href="/changePassword.html">Change password</a>
             `;
-        } else {
+        }
+        else{
+            if (header) header.classList.remove('admin-mode');
             html = `
                 <a href="/login.html">Login</a>
                 <a href="/register.html">Register</a>
@@ -51,3 +71,4 @@ document.addEventListener('DOMContentLoaded',async () => {
         console.error('Error fetching auth status:', error);
     }
 });
+
