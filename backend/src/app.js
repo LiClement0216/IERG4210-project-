@@ -12,6 +12,7 @@ const session = require('express-session');
 const crypto  = require('crypto');
 const bcrypt = require('bcrypt');
 
+app.set('trust proxy', 1);
 app.use((req, res, next) => {
   res.setHeader(
     'Content-Security-Policy',
