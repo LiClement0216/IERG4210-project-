@@ -49,3 +49,6 @@ backend/package.json.broken
 
 #env
 .env
+
+#db
+app.db
