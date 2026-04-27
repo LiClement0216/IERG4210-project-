@@ -1001,12 +1001,7 @@ app.get('/paypal/success', async (req, res) => {
       WHERE paypal_order_id = ?
     `).run(captureId, token);
 
-    res.send(`
-      <script>
-        alert('Payment successful!');
-        window.location.href = '/';
-      </script>
-    `);
+    res.redirect('/');
   } catch (err) {
     console.error('PayPal success route error:', err);
     res.status(500).send('Server error');
