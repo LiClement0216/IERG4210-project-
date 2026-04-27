@@ -826,6 +826,35 @@ app.get('/paypal/cancel', (req, res) => {
 });
 
 
+function rebuildOrderDigest(order) {
+  const normalizedItems = JSON.parse(order.items_json);
+
+  const digestParts = [
+    order.currency,
+    order.merchant_email,
+    order.salt
+  ];
+
+  for (const item of normalizedItems) {
+    digestParts.push(
+      String(item.pid),
+      String(item.quantity),
+      Number(item.price).toFixed(2)
+    );
+  }
+
+  digestParts.push(Number(order.total).toFixed(2));
+
+  const digestString = digestParts.join('|');
+  return crypto.createHash('sha256').update(digestString).digest('hex');
+}
+
+
+
+
+
+
+
 const PORT = 3000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
