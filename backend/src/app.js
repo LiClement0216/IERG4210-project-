@@ -11,7 +11,11 @@ const sanitizeHtml = require('sanitize-html');
 const session = require('express-session');
 const crypto  = require('crypto');
 const bcrypt = require('bcrypt');
-
+const dotenv = require('dotenv');
+dotenv.config();
+if (!process.env.SESSION_SECRET) {
+  console.warn('Warning: SESSION_SECRET is not set');
+}
 app.set('trust proxy', 1);
 app.use((req, res, next) => {
   res.setHeader(
@@ -40,14 +44,14 @@ const htmlDir = path.join(staticsDir, 'html');
 
 app.use(session({
   name: 'dnd_auth_session',
-  secret: 'hardcodedSecret',
+  secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
     sameSite: 'lax',
     maxAge: 3 * 24 * 60 * 60 * 1000,
-    secure: true
+    secure: false
   }
 }));
 
@@ -86,7 +90,7 @@ app.get('/csrf-token', (req, res) => {
 function verifyCsrf(req, res) {
   const tokenFromRequest = req.headers['x-csrf-token'] || req.body.csrfToken;
   if (!tokenFromRequest || tokenFromRequest !== req.session.csrfToken) {
-    res.status(403).send('Invalid CSRF token');
+    res.status(403).json({ error: 'Invalid CSRF token' });
     return false;
   }
   return true;
@@ -662,15 +666,22 @@ app.put('/change-password',(req,res)=>{
 })
 
 
-app.post('/api/checkout/create-order', (req, res) => {
+app.post('/api/checkout/create-order', async (req, res) => {
   //console.log('checkout body:', req.body);
   //res.json({ ok: true, items: req.body.items });
+  if (!req.session || !req.session.username) {
+    return res.status(401).json({ error: 'Please log in to checkout' });
+  }
+  const username = req.session.username;
 
   if (!Array.isArray(req.body.items) || req.body.items.length === 0) {
     return res.status(400).json({ error: 'No items to checkout' });
   }
   if (!verifyCsrf(req, res)) return;
 
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  const returnUrl = `${baseUrl}/paypal/success`;
+  const cancelUrl = `${baseUrl}/paypal/cancel`;
   try {
     const items = req.body.items;
     const normalizedItems = [];
@@ -695,10 +706,44 @@ app.post('/api/checkout/create-order', (req, res) => {
         lineTotal
       });
     }
+
+    const currency = 'HKD';
+    const merchantEmail = 'sb-a2zxh50886731@business.example.com';
+    const salt = crypto.randomBytes(16).toString('hex');
+    const digestParts = [
+      currency,
+      merchantEmail,
+      salt
+    ];
+    for (const item of normalizedItems) {
+      digestParts.push(
+        String(item.pid),
+        String(item.quantity),
+        Number(item.price).toFixed(2)
+      );
+    }
+    digestParts.push(Number(total).toFixed(2));
+    const digestString = digestParts.join('|');
+    const digest = crypto.createHash('sha256').update(digestString).digest('hex');
+    const info = db.prepare('INSERT INTO orders (username, currency, merchant_email, salt,  digest, total, payment_status, items_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(username, currency, merchantEmail, salt, digest, Number(total).toFixed(2), 'PENDING', JSON.stringify(normalizedItems));
+    const orderId = info.lastInsertRowid;
+
+
+    const accessToken = await getPaypalAccessToken();
+    const paypalOrder = await createPaypalOrder(accessToken, total, orderId, returnUrl, cancelUrl);
+
+    const approveLink = paypalOrder.links.find(link => 
+      link.rel === 'payer-action' || link.rel === 'approve'
+    );
+    if (!approveLink) {
+      throw new Error('No PayPal approval link returned');
+    }
+    db.prepare('UPDATE orders SET paypal_order_id = ? WHERE order_id = ?').run(paypalOrder.id, orderId);
     return res.json({
       ok: true,
-      normalizedItems,
-      total
+      orderId,
+      paypalOrderId: paypalOrder.id,
+      approveUrl: approveLink.href
     });
   } catch (err) {
     console.error('Checkout error:', err);
@@ -706,6 +751,78 @@ app.post('/api/checkout/create-order', (req, res) => {
   }
 });
 
+async function getPaypalAccessToken() {
+  const clientId = process.env.PAYPAL_CLIENT_ID;
+  const secret = process.env.PAYPAL_CLIENT_SECRET;
+  if (!clientId || !secret) {
+    throw new Error('Missing PayPal credentials');
+  }
+  const auth = Buffer.from(`${clientId}:${secret}`).toString('base64');
+
+  const res = await fetch('https://api-m.sandbox.paypal.com/v1/oauth2/token', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Basic ${auth}`,
+      'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: 'grant_type=client_credentials'
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(`PayPal token error: ${JSON.stringify(data)}`);
+  }
+
+  return data.access_token;
+}
+
+async function createPaypalOrder(accessToken, total, orderId, returnUrl, cancelUrl) {
+  const res = await fetch('https://api-m.sandbox.paypal.com/v2/checkout/orders', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      intent: 'CAPTURE',
+      purchase_units: [
+        {
+          reference_id: String(orderId),
+          amount: {
+            currency_code: 'HKD',
+            value: Number(total).toFixed(2)
+          }
+        }
+      ],
+      payment_source: {
+        paypal: {
+          experience_context: {
+            return_url: returnUrl,
+            cancel_url: cancelUrl,
+            user_action: 'PAY_NOW'
+          }
+        }
+      }
+    })
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(`PayPal create order error: ${JSON.stringify(data)}`);
+  }
+  return data;
+}
+
+app.get('/paypal/success', (req, res) => {
+  console.log('PayPal success query:', req.query);
+  res.json({ message: 'Returned from PayPal', query: req.query });
+});
+
+app.get('/paypal/cancel', (req, res) => {
+  console.log('PayPal cancel query:', req.query);
+  res.json({ message: 'Payment cancelled', query: req.query });
+});
 
 
 const PORT = 3000;

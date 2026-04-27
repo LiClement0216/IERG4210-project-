@@ -1,3 +1,15 @@
+let csrfToken = null;
+
+async function initCsrf() {
+  const res  = await fetch('/csrf-token', { credentials: 'include' });
+  const data = await res.json();
+  csrfToken  = data.csrfToken;
+}
+
+document.addEventListener('DOMContentLoaded', async() => {
+  await initCsrf();
+});
+
 function getCartKey(){
   const username = window.currentAppUser || 'Guest';
   return `cart_${username}`;
@@ -157,8 +169,10 @@ export async function checkoutCart(){
   try {
     const res = await fetch('/api/checkout/create-order', {
       method: 'POST',
+      credentials: 'include', 
       headers: { 
-        'Content-Type': 'application/json' 
+        'Content-Type': 'application/json' ,
+        'X-CSRF-Token': csrfToken
       },
       body: JSON.stringify({ items })
     });
@@ -168,7 +182,8 @@ export async function checkoutCart(){
       alert(data.error || 'Checkout failed.');
       return;
     }
-    alert('Checkout request sent successfully.');
+    saveCart([]);
+    window.location.href = data.approveUrl;
   }catch (err) {
     console.error('Checkout error:', err);
     alert('Unable to start checkout.');

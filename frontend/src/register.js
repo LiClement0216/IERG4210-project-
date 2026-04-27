@@ -45,6 +45,7 @@ confirmInput.addEventListener('blur', () => {
 
 document.getElementById('register-form').addEventListener('submit', async (e) => {
   e.preventDefault();
+  await initCsrf();
   const username = usernameInput.value;
   const password = passwordInput.value;
   const confirmPassword = confirmInput.value;
@@ -56,8 +57,6 @@ document.getElementById('register-form').addEventListener('submit', async (e) =>
     userError.style.display = 'block';
     return;
   }
-  const csrfTokenInput = document.querySelector('input[name="csrfToken"]');
-  csrfTokenInput.value = csrfToken;
   fetch('/register', {
     method: 'POST',
     headers: {
