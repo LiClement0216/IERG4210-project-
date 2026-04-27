@@ -849,8 +849,117 @@ function rebuildOrderDigest(order) {
   return crypto.createHash('sha256').update(digestString).digest('hex');
 }
 
+async function verifyPaypalWebhook(req) {
+  const webhookId = process.env.PAYPAL_WEBHOOK_ID;
+  if (!webhookId) {
+    throw new Error('Missing PAYPAL_WEBHOOK_ID');
+  }
+
+  const accessToken = await getPaypalAccessToken();
+
+  const verifyRes = await fetch('https://api-m.sandbox.paypal.com/v1/notifications/verify-webhook-signature', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      auth_algo: req.headers['paypal-auth-algo'],
+      cert_url: req.headers['paypal-cert-url'],
+      transmission_id: req.headers['paypal-transmission-id'],
+      transmission_sig: req.headers['paypal-transmission-sig'],
+      transmission_time: req.headers['paypal-transmission-time'],
+      webhook_id: webhookId,
+      webhook_event: req.body
+    })
+  });
+
+  const result = await verifyRes.json();
+
+  if (!verifyRes.ok) {
+    throw new Error(`Webhook verification failed: ${JSON.stringify(result)}`);
+  }
+
+  return result.verification_status === 'SUCCESS';
+}
 
 
+app.post('/paypal/webhook', async (req, res) => {
+  try {
+    console.log('PayPal webhook headers:', req.headers);
+    console.log('PayPal webhook body:', JSON.stringify(req.body, null, 2));
+
+    const isValid = await verifyPaypalWebhook(req);
+    if (!isValid) {
+      console.warn('Invalid PayPal webhook');
+      return res.status(400).send('Invalid PayPal webhook');
+    }
+
+    const event = req.body;
+    const eventType = event.event_type;
+    const eventId = event.id;
+
+    if (eventType !== 'CHECKOUT.ORDER.COMPLETED') {
+      return res.status(200).json({ ok: true, ignored: true });
+    }
+
+    const existingByEvent = db.prepare(
+      'SELECT order_id FROM orders WHERE paypal_event_id = ?'
+    ).get(eventId);
+
+    if (existingByEvent) {
+      return res.status(200).json({ ok: true, duplicate: true });
+    }
+
+    const paypalOrderId = event.resource?.id;
+    if (!paypalOrderId) {
+      return res.status(400).send('Missing PayPal order id');
+    }
+
+    const order = db.prepare(
+      'SELECT * FROM orders WHERE paypal_order_id = ?'
+    ).get(paypalOrderId);
+
+    if (!order) {
+      return res.status(404).send('Order not found');
+    }
+
+    if (order.payment_status === 'PAID') {
+      return res.status(200).json({ ok: true, alreadyPaid: true });
+    }
+
+    const regeneratedDigest = rebuildOrderDigest(order);
+    if (regeneratedDigest !== order.digest) {
+      return res.status(400).send('Digest validation failed');
+    }
+
+
+
+    const captureId =
+      event.resource?.purchase_units?.[0]?.payments?.captures?.[0]?.id || null;
+
+    db.prepare(`
+      UPDATE orders
+      SET payment_status = 'PAID',
+          paypal_event_id = ?,
+          paypal_capture_id = ?,
+          paid_at = CURRENT_TIMESTAMP,
+          webhook_payload = ?
+      WHERE order_id = ?
+    `).run(
+      eventId,
+      captureId,
+      JSON.stringify(event),
+      order.order_id
+    );
+
+
+    return res.status(200).json({ ok: true, verified: true });
+  } catch (err) {
+    console.error('PayPal webhook error:', err);
+    return res.status(500).send('Webhook error');
+  }
+});
 
 
 
