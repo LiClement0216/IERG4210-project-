@@ -898,7 +898,7 @@ app.post('/paypal/webhook', async (req, res) => {
     const event = req.body;
     const eventType = event.event_type;
     const eventId = event.id;
-
+    console.log('PayPal webhook event type:', event.event_type);
     if (eventType !== 'CHECKOUT.ORDER.COMPLETED') {
       return res.status(200).json({ ok: true, ignored: true });
     }
