@@ -46,3 +46,6 @@ backend/.lesshst
 backend/.profile
 backend/.sudo_as_admin_successful
 backend/package.json.broken
+
+#env
+.env
