@@ -662,7 +662,49 @@ app.put('/change-password',(req,res)=>{
 })
 
 
+app.post('/api/checkout/create-order', (req, res) => {
+  //console.log('checkout body:', req.body);
+  //res.json({ ok: true, items: req.body.items });
 
+  if (!Array.isArray(req.body.items) || req.body.items.length === 0) {
+    return res.status(400).json({ error: 'No items to checkout' });
+  }
+  if (!verifyCsrf(req, res)) return;
+
+  try {
+    const items = req.body.items;
+    const normalizedItems = [];
+    let total = 0;
+    for (const item of items) {
+      const pid = Number(item.pid);
+      const quantity = Number(item.quantity);
+      if (!Number.isInteger(pid) || pid <= 0 || !Number.isInteger(quantity) || quantity <= 0) {
+        return res.status(400).json({ error: 'Invalid item data' });
+      }
+      const dbPrice = db.prepare('SELECT price FROM products WHERE pid = ?').get(pid);
+      if (!dbPrice) {
+        return res.status(400).json({ error: `Product with ID ${pid} not found` });
+      }
+      const price = Number(dbPrice.price);
+      const lineTotal = price * quantity;
+      total += lineTotal;
+      normalizedItems.push({
+        pid,
+        quantity,
+        price,
+        lineTotal
+      });
+    }
+    return res.json({
+      ok: true,
+      normalizedItems,
+      total
+    });
+  } catch (err) {
+    console.error('Checkout error:', err);
+    res.status(500).json({ error: 'Server error during checkout' });
+  }
+});
 
 
 

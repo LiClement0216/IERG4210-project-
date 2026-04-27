@@ -12,6 +12,8 @@ export function loadCart() {
   return s ? JSON.parse(s) : [];
 }
 
+
+
 export function addToCartHandler(pid) {
   pid = Number(pid);
   const cart = loadCart();
@@ -106,6 +108,11 @@ export function renderCart(products) {
       if (cartitemprices[index]) cartitemprices[index].textContent = `$${product.price}` || '';
     }
   });
+
+  const checkoutBtn = document.querySelector('.checkout');
+  if (checkoutBtn) {
+    checkoutBtn.onclick = () => checkoutCart();
+  }
 }
 
 export function removeFromCart(pid) {
@@ -129,4 +136,41 @@ export function updateQuantity(pid, quantity) {
             saveCart(cart);
         }
     }
+}
+
+export function getCheckoutItems() {
+  const cart = loadCart();
+  return cart
+    .filter(item => Number(item.quantity) > 0)
+    .map(item => ({
+      pid: Number(item.pid),
+      quantity: Number(item.quantity)
+    }));
+}
+
+export async function checkoutCart(){
+  const items = getCheckoutItems();
+  if(items.length === 0){
+    alert('Your cart is empty!');
+    return;
+  }
+  try {
+    const res = await fetch('/api/checkout/create-order', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json' 
+      },
+      body: JSON.stringify({ items })
+    });
+    const data = await res.json();
+    console.log('checkout response:', data);
+    if (!res.ok) {
+      alert(data.error || 'Checkout failed.');
+      return;
+    }
+    alert('Checkout request sent successfully.');
+  }catch (err) {
+    console.error('Checkout error:', err);
+    alert('Unable to start checkout.');
+  }
 }
