@@ -815,11 +815,6 @@ async function createPaypalOrder(accessToken, total, orderId, returnUrl, cancelU
   return data;
 }
 
-app.get('/paypal/success', (req, res) => {
-  console.log('PayPal success query:', req.query);
-  res.json({ message: 'Returned from PayPal', query: req.query });
-});
-
 app.get('/paypal/cancel', (req, res) => {
   console.log('PayPal cancel query:', req.query);
   res.json({ message: 'Payment cancelled', query: req.query });
@@ -955,11 +950,61 @@ app.post('/paypal/webhook', async (req, res) => {
       order.order_id
     );
 
-
     return res.status(200).json({ ok: true, verified: true });
   } catch (err) {
     console.error('PayPal webhook error:', err);
     return res.status(500).send('Webhook error');
+  }
+});
+
+
+app.get('/paypal/success', async (req, res) => {
+  const token = req.query.token;
+
+  if (!token) {
+    return res.status(400).send('Missing PayPal token');
+  }
+
+  try {
+    const accessToken = await getPaypalAccessToken();
+
+    const captureRes = await fetch(`https://api-m.sandbox.paypal.com/v2/checkout/orders/${token}/capture`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    const captureData = await captureRes.json();
+
+    if (!captureRes.ok) {
+      console.error('PayPal capture failed:', captureData);
+      return res.status(500).send('Payment capture failed');
+    }
+
+    console.log('PayPal capture success:', JSON.stringify(captureData, null, 2));
+
+    const capture = captureData.purchase_units?.[0]?.payments?.captures?.[0];
+    const captureId = capture?.id || null;
+    const captureStatus = capture?.status || null;
+
+    if (captureStatus !== 'COMPLETED') {
+      return res.status(400).send('Payment not completed');
+    }
+
+    db.prepare(`
+      UPDATE orders
+      SET payment_status = 'PAID',
+          paypal_capture_id = ?,
+          paid_at = CURRENT_TIMESTAMP
+      WHERE paypal_order_id = ?
+    `).run(captureId, token);
+
+    res.send('Payment successful');
+  } catch (err) {
+    console.error('PayPal success route error:', err);
+    res.status(500).send('Server error');
   }
 });
 
