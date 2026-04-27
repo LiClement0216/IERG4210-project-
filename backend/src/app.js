@@ -12,8 +12,6 @@ const session = require('express-session');
 const crypto  = require('crypto');
 const bcrypt = require('bcrypt');
 const dotenv = require('dotenv');
-const path = require('path');
-const dotenv = require('dotenv');
 
 dotenv.config({ path: path.join(__dirname, '../.env') });
 if (!process.env.SESSION_SECRET) {
