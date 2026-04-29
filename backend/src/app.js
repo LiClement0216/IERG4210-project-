@@ -52,7 +52,7 @@ app.use(session({
     httpOnly: true,
     sameSite: 'lax',
     maxAge: 3 * 24 * 60 * 60 * 1000,
-    secure: true
+    secure: false
   }
 }));
 
@@ -1054,7 +1054,7 @@ app.get('/member/orders/data', (req, res) => {
   const username = req.session.username;
 
   try {
-    const rows = db.prepare(`
+    const orders = db.prepare(`
       SELECT
         order_id,
         currency,
@@ -1070,7 +1070,25 @@ app.get('/member/orders/data', (req, res) => {
       LIMIT 5
     `).all(username);
 
-    res.json(rows);
+    const products = db.prepare(`
+      SELECT pid, name FROM products
+    `).all();
+
+    const productMap = {};
+    for (const p of products) {
+      productMap[String(p.pid)] = p.name;
+    }
+
+    const enriched = orders.map(order => {
+      const rawItems = JSON.parse(order.items_json || '[]');
+      const items = rawItems.map(i => ({
+        ...i,
+        product_name: productMap[String(i.pid)] || `Product #${i.pid}`
+      }));
+      return { ...order, items };
+    });
+
+    res.json(enriched);
   } catch (err) {
     console.error('member orders data error:', err);
     res.status(500).send('Server error');

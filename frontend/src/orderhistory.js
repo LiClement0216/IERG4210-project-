@@ -25,10 +25,9 @@ async function loadData() {
     for (const order of orders) {
       const tr = document.createElement('tr');
 
-      const items = JSON.parse(order.items_json || '[]');
-      const itemsText = items
-        .map(i => `PID ${i.pid} x${i.quantity} @ ${i.price}`)
-        .join(', ');
+      const itemsText = order.items
+        .map(i => `${i.product_name} x${i.quantity} @ ${i.price}`)
+        .join(',<br>');
 
       tr.innerHTML = `
         <td>${order.total}</td>
