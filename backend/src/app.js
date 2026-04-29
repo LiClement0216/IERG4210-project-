@@ -1008,7 +1008,74 @@ app.get('/paypal/success', async (req, res) => {
   }
 });
 
+app.get('/admin/orders/data', requireAdmin, (req, res) => {
+  try {
+    const rows = db.prepare(`
+      SELECT
+        order_id,
+        username,
+        currency,
+        merchant_email,
+        total,
+        payment_status,
+        paypal_order_id,
+        paypal_capture_id,
+        items_json,
+        created_at,
+        paid_at
+      FROM orders
+      ORDER BY order_id DESC
+      LIMIT 100
+    `).all();
 
+    res.json(rows);
+  } catch (err) {
+    console.error('admin orders data error:', err);
+    res.status(500).send('Server error');
+  }
+});
+
+app.get('/orderlist', requireAdmin,(req, res) => {
+  res.sendFile(path.join(htmlDir, 'admin', 'orderlist.html'));
+});
+
+app.get('/orderhistory', (req, res) => {
+  if (!req.session || !req.session.username) {
+    return res.status(401).send('Unauthorized. Please login.');
+  }
+  res.sendFile(path.join(htmlDir, 'orderhistory.html'));
+});
+
+app.get('/member/orders/data', (req, res) => {
+  if (!req.session || !req.session.username) {
+    return res.status(401).send('Unauthorized. Please login.');
+  }
+
+  const username = req.session.username;
+
+  try {
+    const rows = db.prepare(`
+      SELECT
+        order_id,
+        currency,
+        total,
+        payment_status,
+        items_json,
+        paypal_order_id,
+        paid_at,
+        created_at
+      FROM orders
+      WHERE username = ?
+      ORDER BY order_id DESC
+      LIMIT 5
+    `).all(username);
+
+    res.json(rows);
+  } catch (err) {
+    console.error('member orders data error:', err);
+    res.status(500).send('Server error');
+  }
+});
 
 
 const PORT = 3000;

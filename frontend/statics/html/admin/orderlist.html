@@ -5,8 +5,6 @@
     <title>DnD</title>
     <link rel="stylesheet" href="/css/index.css">
     <link rel="stylesheet" href="/css/CRUD.css">
-    <link rel="stylesheet" href="/css/login.css">
-    <link rel="stylesheet" href="/css/admin.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 </head>
 
@@ -23,22 +21,28 @@
             <ol>
                 <li><a href="/">Home</a></li>
                 <li> > </li>
-                <li><a href="#">admin</a></li>
+                <li><a href="#">Order List</a></li>
             </ol>
         </nav>
         <section class="content">
-            <h2>Admin</h2>
-            <table class="adminlinktable">
-                <tbody>
+            <h2>Order List</h2>
+            <table>
+                 <thead>
                     <tr>
-                        <td><a href="/productsCRUD" class="adminlink">Products CRUD</a></td>
+                        <th>ID</th>
+                        <th>User</th>
+                        <th>Total</th>
+                        <th>Currency</th>
+                        <th>Status</th>
+                        <th>Items</th>
+                        <th>PayPal Order ID</th>
+                        <th>Capture ID</th>
+                        <th>Created</th>
+                        <th>Paid At</th>
                     </tr>
-                    <tr>
-                        <td><a href="/categoriesCRUD" class="adminlink">Categories CRUD</a></td>
-                    </tr>
-                    <tr>
-                        <td><a href="/orderlist" class="adminlink">Order List</a></td>
-                    </tr>
+                </thead>
+                <tbody id="orders-table-body">
+
                 </tbody>
             </table>
         </section>
@@ -48,6 +52,7 @@
         <div>1155214218@2026</div>
         <div>Images not owned by me, site only for demo and education purpose.</div>
     </footer>
+    <script src="/src/orderlist.js"></script>
 
 
 </body>

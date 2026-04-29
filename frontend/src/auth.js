@@ -29,8 +29,10 @@ document.addEventListener('DOMContentLoaded',async () => {
             }
             html = `
                 <span>Welcome, ${data.username}!</span>
+                ${data.isAdmin ? '<a href="/orderlist">Order List</a>' : ''}
                 ${data.isAdmin ? '<a href="/productsCRUD">Products CRUD</a>' : ''}
                 ${data.isAdmin ? '<a href="/categoriesCRUD">Categories CRUD</a>' : ''}
+                <a href="/orderhistory">My Orders</a>
                 <a href="#" id="logout-btn">Logout</a>
                 <a href="/changePassword.html">Change password</a>
             `;
