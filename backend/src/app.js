@@ -60,24 +60,24 @@ app.use(session({
 }));
 
 function requireAdmin(req, res, next) {
+  const accepts = req.headers.accept || '';
+  const wantsJson = req.xhr || accepts.includes('json');
+
   if (!req.session || !req.session.username) {
-    if (req.xhr || req.headers.accept.indexOf('json') > -1) {
-      res.status(401).send('Unauthorized. please login');
+    if (wantsJson) {
+      return res.status(401).send('Unauthorized. please login');
     }
     return res.redirect('/login.html');
   }
-  
+
   if (req.session.isAdmin !== 1) {
-    if (req.xhr || req.headers.accept.indexOf('json') > -1) {
-      res.status(403).send('Forbidden. Admins only');
+    if (wantsJson) {
+      return res.status(403).send('Forbidden. Admins only');
     }
     return res.redirect('/');
   }
-  next();
-}
 
-function generateToken() {
-  return crypto.randomBytes(32).toString('hex');
+  next();
 }
 
 app.use((req, res, next) => {
