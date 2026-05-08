@@ -19,6 +19,7 @@ if (!process.env.SESSION_SECRET) {
 }
 app.set('trust proxy', 1);
 app.use((req, res, next) => {
+  res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader(
     'Content-Security-Policy',
     "default-src 'self'; " +
@@ -28,7 +29,8 @@ app.use((req, res, next) => {
     "font-src 'self' https://cdnjs.cloudflare.com data:; " +
     "object-src 'none'; " +
     "base-uri 'self'; " +
-    "form-action 'self'"
+    "form-action 'self'; " +
+    "frame-ancestors 'none'"
   );
   next();
 });
@@ -52,7 +54,7 @@ app.use(session({
     httpOnly: true,
     sameSite: 'lax',
     maxAge: 3 * 24 * 60 * 60 * 1000,
-    secure: false
+    secure: true
   }
 }));
 
