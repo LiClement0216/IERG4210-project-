@@ -34,6 +34,7 @@ app.use((req, res, next) => {
   );
   next();
 });
+app.disable('x-powered-by');
 
 app.use(express.json());
 const staticsDir = path.join(__dirname, '..', '..', 'frontend', 'statics');
