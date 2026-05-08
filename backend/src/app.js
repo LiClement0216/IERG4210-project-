@@ -80,6 +80,10 @@ function requireAdmin(req, res, next) {
   next();
 }
 
+function generateToken() {
+  return crypto.randomBytes(32).toString('hex');
+}
+
 app.use((req, res, next) => {
   if (!req.session.csrfToken) {
     req.session.csrfToken = generateToken();
