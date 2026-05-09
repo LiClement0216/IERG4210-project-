@@ -12,11 +12,47 @@ const session = require('express-session');
 const crypto  = require('crypto');
 const bcrypt = require('bcrypt');
 const dotenv = require('dotenv');
+const nodemailer = require('nodemailer');
 
 dotenv.config({ path: path.join(__dirname, '../.env') });
 if (!process.env.SESSION_SECRET) {
   console.warn('Warning: SESSION_SECRET is not set');
 }
+
+const transporter = nodemailer.createTransport({
+  host: process.env.EMAIL_HOST,
+  port: Number(process.env.EMAIL_PORT || 587),
+  secure: false,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  }
+});
+
+function generateOtp() {
+  return String(crypto.randomInt(100000, 1000000));
+}
+
+function hashOtp(userId, otp) {
+  return crypto
+    .createHash('sha256')
+    .update(`${userId}:${otp}`)
+    .digest('hex');
+}
+
+async function sendOtpEmail(toEmail, otp) {
+  await transporter.sendMail({
+    from: process.env.EMAIL_FROM,
+    to: toEmail,
+    subject: 'Your DND Shop verification code',
+    text: `Your verification code is ${otp}. It expires in 5 minutes. If you did not try to log in, you can ignore this email.`
+  });
+}
+
+if (!process.env.EMAIL_HOST || !process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+  console.warn('Warning: email SMTP settings are not fully configured');
+}
+
 app.set('trust proxy', 1);
 app.use((req, res, next) => {
   res.setHeader('X-Frame-Options', 'DENY');
@@ -80,14 +116,14 @@ function requireAdmin(req, res, next) {
 
   if (!req.session || !req.session.username) {
     if (wantsJson) {
-      return res.status(401).send('Unauthorized. please login');
+      return res.status(401).json({ error: 'Unauthorized. please login' });
     }
     return res.redirect('/login.html');
   }
 
   if (req.session.isAdmin !== 1) {
     if (wantsJson) {
-      return res.status(403).send('Forbidden. Admins only');
+      return res.status(403).json({ error: 'Forbidden. Admins only' });
     }
     return res.redirect('/');
   }
@@ -188,7 +224,7 @@ app.get('/categoriesR', (req, res) => {
     res.json(rows);
   } catch (err) {
     console.error(err);
-    res.status(500).send('DB error');
+    res.status(500).json({ error: 'DB error' });
   }
 });
 
@@ -207,7 +243,7 @@ app.get('/productsR', (req, res) => {
     res.json(rows);
   } catch (err) {
     console.error(err);
-    res.status(500).send('DB error');
+    res.status(500).json({ error: 'DB error' });
   }
 });
 
@@ -254,7 +290,7 @@ app.put('/categories/:catid', requireAdmin,(req, res) => {
   if (!verifyCsrf(req, res)) return;
   const catid = Number(req.params.catid);
   if (!Number.isInteger(catid) || catid <= 0) {
-    return res.status(400).send('Invalid category id');
+    return res.status(400).json({ error: 'Invalid category id' });
   }
   const data = {
     name: req.body.name,
@@ -263,7 +299,7 @@ app.put('/categories/:catid', requireAdmin,(req, res) => {
 
   const { error, value } = categorySchema.validate(data);
   if (error) {
-    return res.status(400).send('Invalid category data');
+    return res.status(400).json({ error: 'Invalid category data' });
   }
 
   const { name, description } = value;
@@ -279,13 +315,13 @@ app.put('/categories/:catid', requireAdmin,(req, res) => {
     const info = stmt.run({ catid, name, description });
 
     if (info.changes === 0) {
-      return res.status(404).send('Category not found');
+      return res.status(404).json({ error: 'Category not found' });
     }
 
     res.sendStatus(204);
   } catch (err) {
     console.error(err);
-    res.status(500).send('DB error');
+    res.status(500).json({ error: 'DB error' });
   }
 });
 
@@ -325,7 +361,7 @@ app.put('/products/:pid', requireAdmin,upload.single('image'),(req, res) => {
   if (!verifyCsrf(req, res)) return;
   const pid = Number(req.params.pid);
   if (!Number.isInteger(pid) || pid <= 0) {
-    return res.status(400).send('Invalid product id');
+    return res.status(400).json({ error: 'Invalid product id' });
   }
 
   const data = {
@@ -337,7 +373,7 @@ app.put('/products/:pid', requireAdmin,upload.single('image'),(req, res) => {
 
   const { error, value } = productSchema.validate(data);
   if (error) {
-    return res.status(400).send('Invalid product data');
+    return res.status(400).json({ error: 'Invalid product data' });
   }
 
   const { catid, name, description, price } = value;
@@ -355,13 +391,13 @@ app.put('/products/:pid', requireAdmin,upload.single('image'),(req, res) => {
     const info = stmt.run({ pid, catid, name, description, price });
 
     if (info.changes === 0) {
-      return res.status(404).send('Product not found');
+      return res.status(404).json({ error: 'Product not found' });
     }
 
     res.sendStatus(204);
   } catch (err) {
     console.error(err);
-    res.status(500).send('DB error');
+    res.status(500).json({ error: 'DB error' });
   }
 });
 
@@ -377,12 +413,12 @@ app.delete('/categories/:catid', requireAdmin, (req, res) => {
     const stmt = db.prepare('DELETE FROM categories WHERE catid = ?');
     const info = stmt.run(catid);
     if (info.changes === 0) {
-      return res.status(404).send('Category not found');
+      return res.status(404).json({ error: 'Category not found' });
     }
     res.sendStatus(204);
   } catch (err) {
     console.error(err);
-    res.status(500).send('DB error');
+    res.status(500).json({ error: 'DB error' });
   }
 });
 app.delete('/products/:pid', requireAdmin, async(req, res) => {
@@ -392,7 +428,7 @@ app.delete('/products/:pid', requireAdmin, async(req, res) => {
     const stmt = db.prepare('DELETE FROM products WHERE pid = ?');
     const info = stmt.run(pid);
     if (info.changes === 0) {
-      return res.status(404).send('Product not found');
+      return res.status(404).json({ error: 'Product not found' });
     }
     const dir = path.join(imgBaseDir, 'products', String(pid));
     try {
@@ -403,7 +439,7 @@ app.delete('/products/:pid', requireAdmin, async(req, res) => {
     res.sendStatus(204);
   } catch (err) {
     console.error(err);
-    res.status(500).send('DB error');
+    res.status(500).json({ error: 'DB error' });
   }
 });
 
@@ -419,7 +455,7 @@ app.post('/categories', requireAdmin, (req, res) => {
   };
   const { error, value } = categorySchema.validate(data);
   if (error) {
-    return res.status(400).send('Invalid category data');
+    return res.status(400).json({ error: 'Invalid category data' });
   }
 
   const { name, description } = value;
@@ -433,13 +469,13 @@ app.post('/categories', requireAdmin, (req, res) => {
     const info = stmt.run({name, description});
 
     if (info.changes === 0) {
-      return res.status(400).send('Failed to create category');
+      return res.status(400).json({ error: 'Failed to create category' });
     }
 
-    res.status(201).send('Category created');
+    res.status(201).json({ message: 'Category created' });
   } catch (err) {
     console.error(err);
-    res.status(500).send('DB error');
+    res.status(500).json({ error: 'DB error' });
   }
 });
 
@@ -473,7 +509,7 @@ app.post('/products', requireAdmin, uploadTemp.single('image'), async (req, res)
 
   const { error, value } = productSchema.validate(data);
   if (error) {
-    return res.status(400).send('Invalid product data');
+    return res.status(400).json({ error: 'Invalid product data' });
   }
   const { catid, name, description, price } = value;
 
@@ -515,7 +551,7 @@ app.post('/products', requireAdmin, uploadTemp.single('image'), async (req, res)
     res.status(201).send('Product created');
   } catch (err) {
     console.error('POST /products error:', err);
-    res.status(500).send('DB error');
+    res.status(500).json({ error: 'DB error' });
   }
 });
 
@@ -546,7 +582,7 @@ app.get('/products/:pid/images', (req, res) => {
     res.json(files);
   } catch (err) {
     console.error('GET /products/:pid/images error:', err);
-    res.status(500).send('Image listing error');
+    res.status(500).json({ error: 'Image listing error' });
   }
 });
 
@@ -584,24 +620,124 @@ app.post('/register', (req, res) => {
     res.status(201).send('User registered');
   } catch (err) {
     console.error('Registration error:', err);
-    res.status(500).send('DB error');
+    res.status(500).json({ error: 'DB error' });
   }
 });
 
 
-app.post('/login', (req, res) => {
+app.post('/login', async (req, res) => {
   if (!verifyCsrf(req, res)) return;
+
   const { username, password } = req.body;
+
   try {
-    const user = db.prepare('SELECT * FROM users WHERE email = ?').get(username); 
+    const user = db.prepare('SELECT * FROM users WHERE email = ?').get(username);
+
     if (!user || !bcrypt.compareSync(password, user.password)) {
-      return res.status(401).send('Invalid credentials');
+      return res.status(401).json({ error: 'Invalid credentials' });
     }
+
+    const otp = generateOtp();
+    const otpHash = hashOtp(user.userid, otp);
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+
+    db.prepare(`
+      DELETE FROM login_otp
+      WHERE user_id = ? AND used_at IS NULL
+    `).run(user.userid);
+
+    db.prepare(`
+      INSERT INTO login_otp (user_id, otp_hash, expires_at, attempts)
+      VALUES (?, ?, ?, 0)
+    `).run(user.userid, otpHash, expiresAt);
+
+    await sendOtpEmail(user.email, otp);
+
+    req.session.pending2faUserId = user.userid;
+    req.session.pending2faEmail = user.email;
+    req.session.pending2faIsAdmin = user.isAdmin === 1 ? 1 : 0;
+
+    req.session.save(err => {
+      if (err) {
+        console.error('Pending 2FA session save error:', err);
+        return res.status(500).json({ error: 'Session error' });
+      }
+
+      return res.status(200).json({
+        require2fa: true,
+        message: 'Verification code sent'
+      });
+    });
+  } catch (err) {
+    console.error('Login error:', err);
+    res.status(500).json({ error: 'DB error' });
+  }
+});
+
+app.get('/otp.html', (req, res) => {
+  res.sendFile(path.join(htmlDir, 'OTP.html'));
+});
+
+app.post('/verify-otp', (req, res) => {
+  if (!verifyCsrf(req, res)) return;
+
+  const { otp } = req.body;
+  const userId = req.session.pending2faUserId;
+
+  if (!userId) {
+    return res.status(401).json({ error: 'No pending 2FA session' });
+  }
+
+  try {
+    const row = db.prepare(`
+      SELECT * FROM login_otp
+      WHERE user_id = ? AND used_at IS NULL
+      ORDER BY id DESC
+      LIMIT 1
+    `).get(userId);
+
+    if (!row) {
+      return res.status(400).json({ error: 'No active OTP' });
+    }
+
+    if (row.attempts >= 5) {
+      return res.status(429).json({ error: 'Too many attempts' });
+    }
+
+    if (new Date(row.expires_at).getTime() < Date.now()) {
+      return res.status(400).json({ error: 'OTP expired' });
+    }
+
+    const candidateHash = hashOtp(userId, String(otp));
+
+    if (candidateHash !== row.otp_hash) {
+      db.prepare(`
+        UPDATE login_otp
+        SET attempts = attempts + 1
+        WHERE id = ?
+      `).run(row.id);
+
+      return res.status(400).json({ error: 'Invalid OTP' });
+    }
+
+    db.prepare(`
+      UPDATE login_otp
+      SET used_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).run(row.id);
+
+    const user = db.prepare('SELECT * FROM users WHERE userid = ?').get(userId);
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
     req.session.regenerate(err => {
       if (err) {
         console.error('Session regeneration error:', err);
-        return res.status(500).send('Session error');
+        return res.status(500).json({ error: 'Session error' });
       }
+
       req.session.userId = user.userid;
       req.session.username = user.email;
       req.session.isAdmin = user.isAdmin === 1 ? 1 : 0;
@@ -609,19 +745,22 @@ app.post('/login', (req, res) => {
       req.session.save(err => {
         if (err) {
           console.error('Session save error:', err);
-          return res.status(500).send('Session error');
-        }        
-        res.status(200).json({ 
-          message: 'Login successful', 
+          return res.status(500).json({ error: 'Session error' });
+        }
+
+        return res.status(200).json({
+          message: 'Login successful',
           isAdmin: req.session.isAdmin
         });
       });
     });
   } catch (err) {
-    console.error('Login error:', err);
-    res.status(500).send('DB error');
+    console.error('OTP verify error:', err);
+    return res.status(500).json({ error: 'Server error' });
   }
 });
+
+
 
 app.get('/auth/status', (req, res) => {
   if (req.session && req.session.username) {
@@ -637,7 +776,7 @@ app.post('/logout', (req, res) => {
   req.session.destroy(err => {
     if (err) {
       console.error('Logout error:', err);
-      res.status(500).send('Logout error');
+      res.status(500).json({ error: 'Logout error' });
     } else {
       res.clearCookie('dnd_auth_session');
       res.json({ message: 'Logged out successfully' });
@@ -679,14 +818,14 @@ app.put('/change-password',(req,res)=>{
     req.session.destroy(err => {
       if (err) {
         console.error('Session destroy error:', err);
-        return res.status(500).send('Password updated, but failed to log out.');
+        return res.status(500).json({ error: 'Password updated, but failed to log out.' });
       }
       res.clearCookie('dnd_auth_session');
       res.status(200).send('Password successfully changed');
     });
   }catch (err) {
     console.error('Change password error:', err);
-    res.status(500).send('Database error');
+    res.status(500).json({ error: 'Database error' });
   }
 })
 
@@ -977,7 +1116,7 @@ app.post('/paypal/webhook', async (req, res) => {
     return res.status(200).json({ ok: true, verified: true });
   } catch (err) {
     console.error('PayPal webhook error:', err);
-    return res.status(500).send('Webhook error');
+    return res.status(500).json({ error: 'Webhook error' });
   }
 });
 
@@ -1004,7 +1143,7 @@ app.get('/paypal/success', async (req, res) => {
 
     if (!captureRes.ok) {
       console.error('PayPal capture failed:', captureData);
-      return res.status(500).send('Payment capture failed');
+      return res.status(500).json({ error: 'Payment capture failed' });
     }
 
     console.log('PayPal capture success:', JSON.stringify(captureData, null, 2));
@@ -1028,7 +1167,7 @@ app.get('/paypal/success', async (req, res) => {
     res.redirect('/');
   } catch (err) {
     console.error('PayPal success route error:', err);
-    res.status(500).send('Server error');
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
