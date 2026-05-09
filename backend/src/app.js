@@ -632,6 +632,8 @@ app.get('/auth/status', (req, res) => {
 });
 
 app.post('/logout', (req, res) => {
+  if (!verifyCsrf(req, res)) return;
+
   req.session.destroy(err => {
     if (err) {
       console.error('Logout error:', err);
