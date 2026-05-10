@@ -402,6 +402,16 @@ footer div{
     margin-left: 30px;
 }
 
+.forgot-row {
+  text-align: right;
+}
+
+.forgot-password{
+    text-decoration: none;
+    color: #6c86fc;
+    font-size: small;
+    text-align: right;
+}
 
 
 @media (max-width: 768px) {

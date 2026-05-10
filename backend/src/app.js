@@ -22,7 +22,7 @@ if (!process.env.SESSION_SECRET) {
 const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST,
   port: Number(process.env.EMAIL_PORT || 587),
-  secure: false,
+  secure: Number(process.env.EMAIL_PORT) === 465,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
@@ -1257,6 +1257,114 @@ app.get('/member/orders/data', (req, res) => {
     res.status(500).send('Server error');
   }
 });
+
+async function sendPasswordResetEmail(toEmail, resetToken) {
+  const baseUrl = process.env.APP_BASE_URL || 'http://localhost:3000';
+  const resetLink = `${baseUrl}/resetPassword.html?token=${encodeURIComponent(resetToken)}`;
+
+  await transporter.sendMail({
+    from: process.env.EMAIL_FROM,
+    to: toEmail,
+    subject: 'Your DND Shop password reset link',
+    text: `Click the link below to reset your password:\n\n${resetLink}\n\nIf you did not request this, you can ignore this email.`
+  });
+}
+
+app.get('/resetPassword.html', (req, res) => {
+  res.sendFile(path.join(htmlDir, 'resetPassword.html'));
+});
+
+app.get('/forgotPassword.html', (req, res) => {
+  res.sendFile(path.join(htmlDir, 'forgotPassword.html'));
+});
+
+app.post('/forgot-password', async (req, res) => {
+  if (!verifyCsrf(req, res)) return;
+  const email = req.body.email;
+
+  try {
+    const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+
+    if (user) {
+      db.prepare(`
+        DELETE FROM password_reset_tokens
+        WHERE user_id = ? AND used_at IS NULL
+      `).run(user.userid);
+
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+      const resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+      db.prepare(`
+        INSERT INTO password_reset_tokens (user_id, token_hash, expires_at, created_at)
+        VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+      `).run(user.userid, resetTokenHash, expiresAt);
+
+      await sendPasswordResetEmail(email, resetToken);
+    }
+
+    return res.json({ message: 'A reset link has been sent.' });
+  } catch (err) {
+    console.error('Password reset request error:', err);
+    return res.status(500).json({ error: 'Server error' });
+  }
+});
+
+const resetPasswordSchema = Joi.object({
+  token: Joi.string().required(),
+  newPassword: Joi.string().min(6).required(),
+  confirmNewPassword: Joi.string().valid(Joi.ref('newPassword')).required()
+});
+
+
+app.post('/reset-password', (req, res) => {
+  if (!verifyCsrf(req, res)) return;
+
+  const { error, value } = resetPasswordSchema.validate(req.body);
+  if (error) {
+    return res.status(400).json({ error: 'Invalid input: ' + error.details[0].message });
+  }
+
+  const { token, newPassword } = value;
+
+  try {
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const nowIso = new Date().toISOString();
+
+    const row = db.prepare(`
+      SELECT prt.id, prt.user_id
+      FROM password_reset_tokens prt
+      WHERE prt.token_hash = ?
+        AND prt.used_at IS NULL
+        AND prt.expires_at > ?
+      LIMIT 1
+    `).get(tokenHash, nowIso);
+
+    if (!row) {
+      return res.status(400).json({ error: 'Invalid or expired reset token' });
+    }
+
+    const hashedNewPassword = bcrypt.hashSync(newPassword, 10);
+
+    db.prepare(`
+      UPDATE users
+      SET password = ?
+      WHERE userid = ?
+    `).run(hashedNewPassword, row.user_id);
+
+    db.prepare(`
+      UPDATE password_reset_tokens
+      SET used_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).run(row.id);
+
+    return res.json({ message: 'Password has been reset. Please log in with your new password.' });
+  } catch (err) {
+    console.error('Reset password error:', err);
+    return res.status(500).json({ error: 'Server error' });
+  }
+});
+
 
 
 const PORT = 3000;

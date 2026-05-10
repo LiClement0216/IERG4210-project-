@@ -5,7 +5,7 @@ table{
     padding: 40px 20px 20px 20px;
     margin-top: 20px;
 }
-.login-btn{
+.login-btn, .register-btn, .reset-btn{
     border: none;
     background-color: rgb(255, 255, 255);
     color: rgb(114, 78, 78);
@@ -16,7 +16,7 @@ table{
     display: block;
     margin: 0 auto;
 }
-.login-btn:hover{
+.login-btn:hover, .register-btn:hover,  .reset-btn:hover{
     background-color: rgb(212, 203, 203);
     color: rgb(158, 110, 110);
 }
@@ -24,4 +24,19 @@ table{
     color: rgb(230, 67, 67);
     font-size: small;
     display: none;
+}
+
+.form-table, .login-form, .reset-form, .forgot-form, .register-form{
+    min-width: 600px;
+}
+
+input{
+    width: 100%;
+    padding: 5px;
+    border-radius: 5px;
+    border: 1px solid rgb(200, 200, 200);
+}
+
+.reset-btn{
+    width: 140px;
 }

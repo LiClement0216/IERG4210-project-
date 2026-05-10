@@ -27,7 +27,7 @@
             <h2>Login</h2>
             <form id="login-form">
                 <input type="hidden" name="csrfToken" value="">
-                <table>
+                <table class="form-table">
                     <tbody>
                         <tr>
                             <td>Email:</td>
@@ -36,6 +36,11 @@
                         <tr>
                             <td>Password:</td>
                             <td><input type="password" id="password"></td>
+                        </tr>
+                        <tr>
+                            <td colspan="2"  class="forgot-row">
+                                <a class="forgot-password" href="/forgotPassword.html">Forgot Password?</a>
+                            </td>
                         </tr>
                         <tr>
                             <td colspan="2"><input type="submit" class="login-btn" value="Login"></td>
