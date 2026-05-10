@@ -1,24 +1,30 @@
 let csrfToken = null;
 
 async function initCsrf() {
-  const res  = await fetch('/csrf-token', { credentials: 'include' });
+  const res = await fetch('/csrf-token', { credentials: 'include' });
   const data = await res.json();
-  csrfToken  = data.csrfToken;
+  csrfToken = data.csrfToken;
 }
-
-document.addEventListener('DOMContentLoaded', async() => {
-  await initCsrf();
-  loadData();
-});
 
 async function loadData() {
   try {
-    const res = await fetch('/member/orders/data', { credentials: 'include' });
-    if (!res.ok) {
+    const [ordersRes, authRes] = await Promise.all([
+      fetch('/member/orders/data', { credentials: 'include' }),
+      fetch('/auth/status', { credentials: 'include' })
+    ]);
+
+    if (!ordersRes.ok) {
       throw new Error('Failed to load orders');
     }
 
-    const orders = await res.json();
+    const orders = await ordersRes.json();
+    const authData = await authRes.json();
+
+    const usernameElem = document.querySelector('.username');
+    if (usernameElem && authData.loggedIn) {
+      usernameElem.textContent = `${authData.username}`;
+    }
+
     const tbody = document.querySelector('#orders-history-body');
     tbody.innerHTML = '';
 
@@ -46,4 +52,7 @@ async function loadData() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', loadData);
+document.addEventListener('DOMContentLoaded', async () => {
+  await initCsrf();
+  loadData();
+});

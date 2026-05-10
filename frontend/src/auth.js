@@ -28,7 +28,6 @@ document.addEventListener('DOMContentLoaded',async () => {
                 if (header) header.classList.remove('admin-mode');
             }
             html = `
-                <span>Welcome, ${data.username}!</span>
                 ${data.isAdmin ? '<a href="/orderlist">Order List</a>' : ''}
                 ${data.isAdmin ? '<a href="/productsCRUD">Products CRUD</a>' : ''}
                 ${data.isAdmin ? '<a href="/categoriesCRUD">Categories CRUD</a>' : ''}

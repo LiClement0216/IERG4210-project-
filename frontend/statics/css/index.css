@@ -246,6 +246,10 @@ main{
     margin: 0 auto;
 }
 
+.username{
+    color: #442b2b;
+}
+
 /*navigation bar*/
 nav{
     background-color: #FFFFFF;
