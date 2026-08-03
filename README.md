@@ -1,6 +1,7 @@
 # Backend setup and run steps
 
-Use these commands from the project root.
+Configure the secret keys for backend and paypal.
+Use the following commands from the project root.
 
 ## Commands
 
